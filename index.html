@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Control Médico</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f2a4a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Control Médico">
+  <style>
+    :root {
+      --navy:    #0f2a4a;
+      --teal:    #1a7a6e;
+      --teal-lt: #e6f4f2;
+      --slate:   #4a6080;
+      --silver:  #f0f4f8;
+      --white:   #ffffff;
+      --border:  #d8e2ec;
+      --text:    #1a2635;
+      --muted:   #6b7f96;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #e8edf3; display: flex; justify-content: center; min-height: 100vh; }
+    .app { width: 100%; max-width: 430px; background: var(--white); min-height: 100vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 40px rgba(0,0,0,0.15); }
+
+    /* HEADER */
+    .header { background: var(--navy); padding: 16px 20px 14px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .header-brand { display: flex; align-items: center; gap: 10px; }
+    .header-logo { width: 36px; height: 36px; background: var(--white); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .header-logo svg { width: 28px; height: 28px; }
+    .header-title { color: var(--white); }
+    .header-title h1 { font-family: Georgia, serif; font-size: 18px; letter-spacing: 0.5px; }
+    .header-title p { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 1px; }
+    .header-date { color: rgba(255,255,255,0.6); font-size: 11px; text-align: right; }
+
+    /* CONTENT */
+    .content { flex: 1; overflow-y: auto; padding-bottom: 80px; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* SECTION HEADER */
+    .section-header { padding: 20px 20px 0; display: flex; align-items: center; justify-content: space-between; }
+    .section-title { font-family: Georgia, serif; font-size: 22px; color: var(--navy); }
+    .section-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* BOTTOM NAV */
+    .bottom-nav { position: fixed; bottom: 0; width: 100%; max-width: 430px; background: var(--white); border-top: 1px solid var(--border); display: flex; z-index: 200; padding-bottom: env(safe-area-inset-bottom); }
+    .nav-btn { flex: 1; padding: 10px 4px 8px; display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: none; cursor: pointer; color: var(--muted); font-size: 9px; font-family: 'Segoe UI', Arial, sans-serif; font-weight: 500; letter-spacing: 0.3px; transition: color .2s; }
+    .nav-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+    .nav-btn.active { color: var(--teal); }
+    .nav-btn.active svg { stroke: var(--teal); }
+
+    /* CARDS */
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin: 0 20px 10px; }
+    .card:first-child { margin-top: 14px; }
+    .patient-name { font-size: 15px; font-weight: 600; color: var(--navy); }
+    .patient-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .patient-meta { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+    .meta-badge { font-size: 11px; background: var(--silver); color: var(--slate); padding: 3px 8px; border-radius: 20px; }
+
+    /* INPUTS */
+    .form-group { margin: 0 20px 14px; }
+    .form-group label { display: block; font-size: 11px; font-weight: 600; color: var(--slate); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 5px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; color: var(--text); background: var(--white); outline: none; transition: border-color .2s; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--teal); }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .form-row { display: flex; gap: 12px; margin: 0 20px 14px; }
+    .form-row .form-group { flex: 1; margin-left: 0; margin-right: 0; }
+
+    /* PATIENT PREVIEW */
+    .patient-preview { margin: 0 20px 16px; background: var(--teal-lt); border: 1px solid #b2d8d3; border-radius: 12px; padding: 14px 16px; }
+    .preview-name { font-family: Georgia, serif; font-size: 17px; color: var(--navy); margin-bottom: 10px; }
+    .preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .preview-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); }
+    .preview-value { font-size: 13px; font-weight: 500; color: var(--navy); margin-top: 1px; }
+    .preview-full { grid-column: 1/-1; }
+
+    /* BUTTONS */
+    .btn-primary { width: calc(100% - 40px); margin: 0 20px; background: var(--navy); color: var(--white); border: none; border-radius: 10px; padding: 14px; font-family: 'Segoe UI', Arial, sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: background .2s; letter-spacing: 0.3px; }
+    .btn-primary:active { background: #0a1e35; }
+    .btn-primary:disabled { background: #b0bec5; }
+    .btn-add { width: 34px; height: 34px; background: var(--navy); color: var(--white); border: none; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+    /* STATUS */
+    .status { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+    .status-completada { background: #d4edda; color: #1a7a3e; }
+    .status-pendiente  { background: #fff3cd; color: #8a5a00; }
+    .status-cancelada  { background: #f8d7da; color: #8b1a22; }
+    .status-pospuesta  { background: #e2d9f3; color: #4a2b8a; }
+
+    /* HOY */
+    .hoy-header { margin: 20px 20px 14px; background: var(--navy); border-radius: 14px; padding: 16px 18px; color: var(--white); }
+    .hoy-date-label { font-size: 11px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.5px; }
+    .hoy-date-value { font-family: Georgia, serif; font-size: 20px; margin-top: 3px; }
+    .hoy-count { font-size: 12px; opacity: 0.7; margin-top: 6px; }
+    .atencion-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin: 0 20px 10px; }
+    .atencion-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .atencion-name { font-size: 15px; font-weight: 600; color: var(--navy); }
+    .atencion-meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .atencion-hora { font-size: 12px; color: var(--muted); }
+
+    /* SEARCH */
+    .search-wrap { margin: 16px 20px 10px; position: relative; }
+    .search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; stroke: var(--muted); fill: none; stroke-width: 2; pointer-events: none; }
+    .search-wrap input { width: 100%; padding: 10px 14px 10px 36px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; outline: none; }
+    .search-wrap input:focus { border-color: var(--teal); }
+
+    /* OVERLAY / MODAL */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(15,42,74,0.5); z-index: 300; align-items: flex-end; justify-content: center; }
+    .overlay.open { display: flex; }
+    .modal { background: var(--white); width: 100%; max-width: 430px; border-radius: 20px 20px 0 0; padding: 20px 0 40px; max-height: 90vh; overflow-y: auto; animation: slideUp .25s ease; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 18px; }
+    .modal-title { font-family: Georgia, serif; font-size: 20px; color: var(--navy); margin: 0 20px 18px; }
+
+    /* REPORTES */
+    .report-tab-wrap { display: flex; gap: 8px; padding: 16px 20px 0; overflow-x: auto; }
+    .report-tab { flex-shrink: 0; padding: 7px 16px; border-radius: 20px; border: 1px solid var(--border); font-size: 13px; font-family: 'Segoe UI', Arial, sans-serif; cursor: pointer; background: var(--white); color: var(--slate); }
+    .report-tab.active { background: var(--navy); color: var(--white); border-color: var(--navy); }
+    .report-nav { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 14px 20px; }
+    .report-nav button { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border); background: var(--white); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .report-nav button svg { width: 16px; height: 16px; stroke: var(--navy); fill: none; stroke-width: 2; }
+    .report-nav-label { font-size: 15px; font-weight: 600; color: var(--navy); min-width: 160px; text-align: center; }
+    .report-summary { margin: 0 20px 14px; background: var(--silver); border-radius: 12px; padding: 14px 16px; }
+    .report-summary-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .report-summary-val { font-size: 28px; font-family: Georgia, serif; color: var(--navy); margin: 4px 0 2px; }
+    .report-summary-sub { font-size: 12px; color: var(--muted); }
+    .report-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 16px; border-bottom: 1px solid var(--silver); }
+    .report-row:last-child { border-bottom: none; }
+    .report-row-name { font-size: 14px; color: var(--text); }
+    .report-row-val { font-size: 13px; font-weight: 600; color: var(--navy); }
+    .report-card { margin: 0 20px 10px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+
+    /* EMPTY */
+    .empty { text-align: center; padding: 50px 20px; color: var(--muted); }
+    .empty svg { width: 48px; height: 48px; stroke: var(--border); margin-bottom: 12px; }
+    .empty p { font-size: 14px; }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: var(--navy); color: var(--white); padding: 12px 22px; border-radius: 30px; font-size: 13px; font-weight: 500; z-index: 999; opacity: 0; transition: opacity .3s; pointer-events: none; white-space: nowrap; }
+    .toast.show { opacity: 1; }
+
+    /* DETAIL */
+    .detail-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 2px; }
+    .detail-value { font-size: 14px; color: var(--text); }
+    .detail-section { padding: 12px 0; border-bottom: 1px solid var(--silver); }
+    .detail-section:last-child { border-bottom: none; }
+
+    /* PDF BTN */
+    .btn-pdf { width: calc(100% - 40px); margin: 14px 20px 0; background: var(--teal); color: var(--white); border: none; border-radius: 10px; padding: 12px; font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-pdf:active { background: #156058; }
+    .btn-pdf:disabled { background: #b0bec5; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="header-brand">
+      <div class="header-logo">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 3v18" stroke="#0f2a4a" stroke-width="2" stroke-linecap="round"/>
+          <path d="M9 6c0 0 6-1 6 2s-6 2-6 4s6 1 6 3" stroke="#1a7a6e" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+          <path d="M10 4c1-1.5 4-1.5 4 0" stroke="#0f2a4a" stroke-width="1.5" fill="none"/>
+          <path d="M10 20c1 1.5 4 1.5 4 0" stroke="#0f2a4a" stroke-width="1.5" fill="none"/>
+        </svg>
+      </div>
+      <div class="header-title">
+        <h1>Control Médico</h1>
+        <p id="headerSub">Sistema Médico</p>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div style="color:rgba(255,255,255,0.95);font-size:12px;font-weight:600;font-family:Georgia,serif">Dr. Miguel Cedeño</div>
+      <div class="header-date" id="headerDate"></div>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <!-- SCREEN 1: REGISTRO -->
+    <section id="screen-registro" class="screen active">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Registro</div>
+          <div class="section-sub">Nueva atención</div>
+        </div>
+      </div>
+      <div style="height:16px"></div>
+      <div class="form-group">
+        <label>Paciente</label>
+        <select id="reg-paciente" onchange="onSelectPaciente()">
+          <option value="">— Seleccionar paciente —</option>
+        </select>
+      </div>
+      <div id="reg-preview" class="patient-preview" style="display:none">
+        <div class="preview-name" id="prev-nombre">—</div>
+        <div class="preview-grid">
+          <div class="preview-item"><div class="preview-label">Cédula</div><div class="preview-value" id="prev-cedula">—</div></div>
+          <div class="preview-item"><div class="preview-label">Edad</div><div class="preview-value" id="prev-edad">—</div></div>
+          <div class="preview-item"><div class="preview-label">Fecha Nac.</div><div class="preview-value" id="prev-fechanac">—</div></div>
+          <div class="preview-item"><div class="preview-label">Tipo Sangre</div><div class="preview-value" id="prev-sangre">—</div></div>
+          <div class="preview-item preview-full"><div class="preview-label">Antecedentes</div><div class="preview-value" id="prev-antecedentes">—</div></div>
+          <div class="preview-item preview-full"><div class="preview-label">Alergias</div><div class="preview-value" id="prev-alergias">—</div></div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Fecha</label><input type="date" id="reg-fecha"></div>
+        <div class="form-group"><label>Hora</label><input type="time" id="reg-hora"></div>
+      </div>
+      <div class="form-group">
+        <label>Tipo de Atención</label>
+        <select id="reg-tipo">
+          <option value="">— Seleccionar —</option>
+          <option>Consulta</option><option>Domicilio</option><option>Seguimiento</option><option>Control</option><option>Urgencia</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Precio (USD)</label><input type="number" id="reg-precio" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="form-group">
+        <label>Estado</label>
+        <select id="reg-estado">
+          <option value="Completada">Completada</option>
+          <option value="Pendiente">Pendiente</option>
+          <option value="Pospuesta">Pospuesta</option>
+          <option value="Cancelada">Cancelada</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Motivo de Consulta</label><textarea id="reg-motivo" placeholder="Describe el motivo..."></textarea></div>
+      <div class="form-group"><label>Observaciones / Notas</label><textarea id="reg-obs" placeholder="Notas adicionales..."></textarea></div>
+      <button class="btn-primary" onclick="guardarAtencion()" id="btnGuardarAtencion">Guardar Atención</button>
+      <div style="height:20px"></div>
+    </section>
+
+    <!-- SCREEN 2: HOY -->
+    <section id="screen-hoy" class="screen">
+      <div class="hoy-header">
+        <div class="hoy-date-label">Atenciones de hoy</div>
+        <div class="hoy-date-value" id="hoy-date-str"></div>
+        <div class="hoy-count" id="hoy-count">Cargando...</div>
+      </div>
+      <div id="hoy-lista"></div>
+    </section>
+
+    <!-- SCREEN 3: PACIENTES -->
+    <section id="screen-pacientes" class="screen">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Pacientes</div>
+          <div class="section-sub" id="pac-count">—</div>
+        </div>
+        <button class="btn-add" onclick="openAddPaciente()">+</button>
+      </div>
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="pac-search" placeholder="Buscar por nombre o cédula..." oninput="renderPacientes()">
+      </div>
+      <div id="pac-lista"></div>
+    </section>
+
+    <!-- SCREEN 4: REPORTES -->
+    <section id="screen-reportes" class="screen">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Reportes</div>
+          <div class="section-sub">Resumen de atenciones</div>
+        </div>
+      </div>
+      <div class="report-tab-wrap">
+        <button class="report-tab active" onclick="setReportTab('semanal',this)">Semanal</button>
+        <button class="report-tab" onclick="setReportTab('mensual',this)">Mensual</button>
+        <button class="report-tab" onclick="setReportTab('paciente',this)">Paciente</button>
+        <button class="report-tab" onclick="setReportTab('ingresos',this)">Ingresos</button>
+      </div>
+      <button class="btn-pdf" onclick="exportarPDF()" id="btnPDF">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Exportar PDF
+      </button>
+      <div id="report-body"></div>
+    </section>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" onclick="setScreen('registro',this)" id="nav-registro">
+      <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Registro
+    </button>
+    <button class="nav-btn" onclick="setScreen('hoy',this)" id="nav-hoy">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Hoy
+    </button>
+    <button class="nav-btn" onclick="setScreen('pacientes',this)" id="nav-pacientes">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Pacientes
+    </button>
+    <button class="nav-btn" onclick="setScreen('reportes',this)" id="nav-reportes">
+      <svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+      Reportes
+    </button>
+  </nav>
+</div>
+
+<!-- MODAL: Nuevo Paciente -->
+<div class="overlay" id="modal-addpac">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nuevo Paciente</div>
+    <div class="form-group"><label>Nombre Completo *</label><input id="np-nombre" placeholder="Ej. Juan Pérez Gómez"></div>
+    <div class="form-group"><label>Cédula</label><input id="np-cedula" placeholder="Número de cédula"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Fecha Nacimiento</label><input type="date" id="np-fechanac" oninput="calcEdadNuevo()"></div>
+      <div class="form-group"><label>Edad</label><input id="np-edad" readonly placeholder="Auto"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Sexo</label>
+        <select id="np-sexo"><option value="">—</option><option>Masculino</option><option>Femenino</option><option>Otro</option></select>
+      </div>
+      <div class="form-group">
+        <label>Tipo Sangre</label>
+        <select id="np-sangre"><option value="">—</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select>
+      </div>
+    </div>
+    <div class="form-group"><label>Teléfono</label><input id="np-telefono" type="tel" placeholder="6000-0000"></div>
+    <div class="form-group"><label>Dirección</label><input id="np-direccion" placeholder="Ciudad, provincia..."></div>
+    <div class="form-group"><label>Antecedentes Patológicos</label><textarea id="np-antecedentes" placeholder="Diabetes, hipertensión..."></textarea></div>
+    <div class="form-group"><label>Alergias</label><textarea id="np-alergias" placeholder="Penicilina, mariscos..."></textarea></div>
+    <div class="form-group"><label>Observaciones</label><textarea id="np-obs" placeholder="Notas relevantes..."></textarea></div>
+    <button class="btn-primary" onclick="guardarNuevoPaciente()" id="btnGuardarPac">Guardar Paciente</button>
+    <div style="height:12px"></div>
+    <button style="width:100%;padding:12px;background:none;border:none;color:var(--muted);font-family:'Segoe UI',Arial,sans-serif;font-size:14px;cursor:pointer" onclick="closeOverlay('modal-addpac')">Cancelar</button>
+  </div>
+</div>
+
+<!-- MODAL: Detalle Paciente -->
+<div class="overlay" id="modal-detail">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="detail-title">Paciente</div>
+    <div id="detail-body"></div>
+    <div style="height:12px"></div>
+    <button style="width:calc(100% - 40px);margin:0 20px;padding:12px;background:none;border:1px solid var(--border);border-radius:10px;color:var(--slate);font-family:'Segoe UI',Arial,sans-serif;font-size:14px;cursor:pointer" onclick="closeOverlay('modal-detail')">Cerrar</button>
+    <div style="height:12px"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// ═══════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════
+let pacientes = [];
+let atenciones = [];
+let currentReportTab = 'semanal';
+let reportWeekOffset = 0;
+let reportMonthOffset = 0;
+let reportPacienteID = '';
+let reportIngresosMode = 'mensual';
+let reportIngresosOffset = 0;
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+window.onload = function() {
+  setHeaderDate();
+  initRegistroDefaults();
+  showToast('Cargando datos...');
+  loadAll().then(function() {
+    renderReportes();
+    showToast('✓ Datos cargados');
+  });
+};
+
+function setHeaderDate() {
+  var now = new Date();
+  var dias   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  var meses  = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var mesesF = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  document.getElementById('headerDate').textContent = dias[now.getDay()] + ' ' + now.getDate() + ' ' + meses[now.getMonth()];
+  document.getElementById('hoy-date-str').textContent = dias[now.getDay()] + ', ' + now.getDate() + ' de ' + mesesF[now.getMonth()] + ' ' + now.getFullYear();
+}
+
+function initRegistroDefaults() {
+  var now = new Date();
+  document.getElementById('reg-fecha').value = now.toISOString().split('T')[0];
+  var hh = String(now.getHours()).padStart(2,'0');
+  var mm = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('reg-hora').value = hh + ':' + mm;
+}
+
+// ═══════════════════════════════════════
+// CARGA DE DATOS
+// ═══════════════════════════════════════
+var API_URL = "https://script.google.com/macros/s/AKfycbyOEyWRLXrytL0Rhyk4c-69MQoBCdc5MABLwZqiplbfNkH5WtIgXkwJS63aACdybxfo/exec";
+
+function loadAll() {
+  return new Promise(function(resolve) {
+    Promise.all([
+      fetch(API_URL + '?action=getPacientes').then(function(r){ return r.json(); }),
+      fetch(API_URL + '?action=getAtenciones').then(function(r){ return r.json(); })
+    ]).then(function(results) {
+      try { pacientes  = results[0].success ? results[0].data : []; } catch(e) { pacientes = []; }
+      try { atenciones = results[1].success ? results[1].data : []; } catch(e) { atenciones = []; }
+      populatePacienteSelect();
+      renderPacientes();
+      renderHoy();
+      resolve();
+    }).catch(function() {
+      pacientes = []; atenciones = [];
+      showToast('⚠ Sin conexión con el servidor');
+      resolve();
+    });
+  });
+}
+
+// ═══════════════════════════════════════
+// NAVEGACIÓN
+// ═══════════════════════════════════════
+function setScreen(name, btn) {
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('screen-' + name).classList.add('active');
+  btn.classList.add('active');
+  var subs = {registro:'Nueva atención', hoy:'Atenciones del día', pacientes:'Directorio', reportes:'Estadísticas'};
+  document.getElementById('headerSub').textContent = subs[name] || '';
+  if (name === 'reportes')  renderReportes();
+  if (name === 'hoy')       renderHoy();
+  if (name === 'pacientes') renderPacientes();
+  if (name === 'registro')  populatePacienteSelect();
+}
+
+// ═══════════════════════════════════════
+// REGISTRO
+// ═══════════════════════════════════════
+function populatePacienteSelect() {
+  var sel = document.getElementById('reg-paciente');
+  var cur = sel.value;
+  sel.innerHTML = '<option value="">— Seleccionar paciente —</option>';
+  pacientes
+    .filter(function(p) { return (p.Estado || 'Activo') === 'Activo'; })
+    .sort(function(a,b) { return (a.NombreCompleto||'').localeCompare(b.NombreCompleto||''); })
+    .forEach(function(p) {
+      var opt = document.createElement('option');
+      opt.value = p.ID;
+      opt.textContent = p.NombreCompleto;
+      sel.appendChild(opt);
+    });
+  if (cur) sel.value = cur;
+}
+
+function onSelectPaciente() {
+  var id = document.getElementById('reg-paciente').value;
+  var preview = document.getElementById('reg-preview');
+  if (!id) { preview.style.display = 'none'; return; }
+  var p = pacientes.find(function(x) { return x.ID === id; });
+  if (!p) { preview.style.display = 'none'; return; }
+  document.getElementById('prev-nombre').textContent       = p.NombreCompleto || '—';
+  document.getElementById('prev-cedula').textContent       = p.Cedula || '—';
+  document.getElementById('prev-edad').textContent         = calcEdad(p.FechaNacimiento) || p.Edad || '—';
+  document.getElementById('prev-fechanac').textContent     = formatDate(p.FechaNacimiento) || '—';
+  document.getElementById('prev-sangre').textContent       = p.TipoSangre || '—';
+  document.getElementById('prev-antecedentes').textContent = p.AntecedentesPatologicos || 'Ninguno';
+  document.getElementById('prev-alergias').textContent     = p.Alergias || 'Ninguna';
+  preview.style.display = 'block';
+}
+
+function guardarAtencion() {
+  var pacID  = document.getElementById('reg-paciente').value;
+  var fecha  = document.getElementById('reg-fecha').value;
+  var hora   = document.getElementById('reg-hora').value;
+  var tipo   = document.getElementById('reg-tipo').value;
+  var precio = document.getElementById('reg-precio').value;
+  var estado = document.getElementById('reg-estado').value;
+  var motivo = document.getElementById('reg-motivo').value;
+  var obs    = document.getElementById('reg-obs').value;
+
+  if (!pacID) { showToast('⚠ Selecciona un paciente'); return; }
+  if (!fecha) { showToast('⚠ Indica la fecha'); return; }
+  if (!hora)  { showToast('⚠ Indica la hora'); return; }
+
+  var btn = document.getElementById('btnGuardarAtencion');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+
+  var data = {
+    PacienteID: pacID, Fecha: fecha, Hora: hora,
+    Precio: String(Number(precio) || 0), TipoAtencion: tipo,
+    MotivoConsulta: motivo, Observaciones: obs, Estado: estado,
+    Lugar: '', Diagnostico: '', Tratamiento: ''
+  };
+
+  var params = new URLSearchParams(Object.assign({action:'registrarAtencion'}, data));
+  fetch(API_URL + '?' + params)
+    .then(function(r){ return r.json(); })
+    .then(function(json) {
+      if (json.success) {
+        showToast('✓ Atención registrada');
+        document.getElementById('reg-paciente').value = '';
+        document.getElementById('reg-motivo').value   = '';
+        document.getElementById('reg-obs').value      = '';
+        document.getElementById('reg-precio').value   = '';
+        document.getElementById('reg-preview').style.display = 'none';
+        initRegistroDefaults();
+        loadAll();
+      } else { showToast('✗ Error al guardar'); }
+      btn.disabled = false;
+      btn.textContent = 'Guardar Atención';
+    })
+    .catch(function() {
+      showToast('✗ Error de conexión');
+      btn.disabled = false;
+      btn.textContent = 'Guardar Atención';
+    });
+}
+
+// ═══════════════════════════════════════
+// HOY
+// ═══════════════════════════════════════
+function renderHoy() {
+  var now   = new Date();
+  var today = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+  var cont  = document.getElementById('hoy-lista');
+
+  var todayAten = atenciones.filter(function(a) {
+    if (!a.Fecha) return false;
+    var d  = new Date(a.Fecha);
+    var fy = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    return fy === today;
+  });
+
+  document.getElementById('hoy-count').textContent =
+    todayAten.length + ' atención' + (todayAten.length !== 1 ? 'es' : '') + ' registrada' + (todayAten.length !== 1 ? 's' : '');
+
+  if (todayAten.length === 0) {
+    cont.innerHTML = '<div class="empty"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><p>Sin atenciones hoy</p></div>';
+    return;
+  }
+
+  cont.innerHTML = todayAten
+    .sort(function(a,b) { return (a.Hora||'').localeCompare(b.Hora||''); })
+    .map(function(a) {
+      var pac = pacientes.find(function(p) { return p.ID === a.PacienteID; }) || {};
+      return '<div class="atencion-card"><div class="atencion-top"><div>' +
+        '<div class="atencion-name">' + (pac.NombreCompleto||'Paciente') + '</div>' +
+        '<div class="atencion-meta">Céd. ' + (pac.Cedula||'—') + ' · Tel. ' + (pac.Telefono||'—') + '</div>' +
+        (a.TipoAtencion ? '<div class="atencion-meta" style="margin-top:3px">' + a.TipoAtencion + '</div>' : '') +
+        '</div><div style="text-align:right">' +
+        '<span class="status ' + statusClass(a.Estado) + '">' + (a.Estado||'—') + '</span>' +
+        '<div class="atencion-hora" style="margin-top:5px">' + formatHora(a.Hora) + '</div>' +
+        '</div></div></div>';
+    }).join('');
+}
+
+// ═══════════════════════════════════════
+// PACIENTES
+// ═══════════════════════════════════════
+function renderPacientes() {
+  var q    = (document.getElementById('pac-search') ? document.getElementById('pac-search').value : '').toLowerCase();
+  var cont = document.getElementById('pac-lista');
+  var filtered = pacientes.filter(function(p) {
+    return (p.NombreCompleto||'').toLowerCase().includes(q) || (p.Cedula||'').toLowerCase().includes(q);
+  });
+
+  document.getElementById('pac-count').textContent =
+    pacientes.length + ' paciente' + (pacientes.length!==1?'s':'') + ' registrado' + (pacientes.length!==1?'s':'');
+
+  if (filtered.length === 0) {
+    cont.innerHTML = '<div class="empty"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p>Sin resultados</p></div>';
+    return;
+  }
+
+  cont.innerHTML = filtered
+    .sort(function(a,b) { return (a.NombreCompleto||'').localeCompare(b.NombreCompleto||''); })
+    .map(function(p) {
+      var edad = calcEdad(p.FechaNacimiento) ? calcEdad(p.FechaNacimiento) + ' años' : (p.Edad||'—');
+      return '<div class="card" onclick="openPacienteDetail(\'' + p.ID + '\')" style="cursor:pointer">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div>' +
+        '<div class="patient-name">' + (p.NombreCompleto||'—') + '</div>' +
+        '<div class="patient-sub">Céd. ' + (p.Cedula||'—') + ' · Tel. ' + (p.Telefono||'—') + '</div>' +
+        '</div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b0bec5" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div>' +
+        '<div class="patient-meta">' +
+        '<span class="meta-badge">' + edad + '</span>' +
+        (p.TipoSangre ? '<span class="meta-badge">' + p.TipoSangre + '</span>' : '') +
+        '<span class="meta-badge">' + (p.Estado||'Activo') + '</span>' +
+        '</div></div>';
+    }).join('');
+}
+
+function openAddPaciente() {
+  document.getElementById('modal-addpac').classList.add('open');
+}
+
+function guardarNuevoPaciente() {
+  var nombre = document.getElementById('np-nombre').value.trim();
+  if (!nombre) { showToast('⚠ El nombre es requerido'); return; }
+
+  var btn = document.getElementById('btnGuardarPac');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+
+  var data = {
+    NombreCompleto: nombre,
+    Cedula: document.getElementById('np-cedula').value,
+    FechaNacimiento: document.getElementById('np-fechanac').value,
+    Edad: document.getElementById('np-edad').value,
+    Sexo: document.getElementById('np-sexo').value,
+    TipoSangre: document.getElementById('np-sangre').value,
+    Telefono: document.getElementById('np-telefono').value,
+    Direccion: document.getElementById('np-direccion').value,
+    AntecedentesPatologicos: document.getElementById('np-antecedentes').value,
+    Alergias: document.getElementById('np-alergias').value,
+    Observaciones: document.getElementById('np-obs').value
+  };
+
+  var params = new URLSearchParams(Object.assign({action:'agregarPaciente'}, data));
+  fetch(API_URL + '?' + params)
+    .then(function(r){ return r.json(); })
+    .then(function(json) {
+      if (json.success) {
+        showToast('✓ Paciente registrado');
+        closeOverlay('modal-addpac');
+        ['np-nombre','np-cedula','np-fechanac','np-edad','np-telefono','np-direccion','np-antecedentes','np-alergias','np-obs'].forEach(function(id) {
+          var el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+        loadAll();
+      } else { showToast('✗ Error al guardar'); }
+      btn.disabled = false;
+      btn.textContent = 'Guardar Paciente';
+    })
+    .catch(function() {
+      showToast('✗ Error de conexión');
+      btn.disabled = false;
+      btn.textContent = 'Guardar Paciente';
+    });
+}
+
+function openPacienteDetail(id) {
+  var p = pacientes.find(function(x) { return x.ID === id; });
+  if (!p) return;
+  var atPac = atenciones.filter(function(a) { return a.PacienteID === id; }).sort(function(a,b) { return b.Fecha > a.Fecha ? 1 : -1; });
+  document.getElementById('detail-title').textContent = p.NombreCompleto || 'Paciente';
+  document.getElementById('detail-body').innerHTML =
+    '<div style="padding:0 20px">' +
+    '<div class="detail-section"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
+    '<div><div class="detail-label">Cédula</div><div class="detail-value">' + (p.Cedula||'—') + '</div></div>' +
+    '<div><div class="detail-label">Teléfono</div><div class="detail-value">' + (p.Telefono||'—') + '</div></div>' +
+    '<div><div class="detail-label">Edad</div><div class="detail-value">' + (calcEdad(p.FechaNacimiento)||p.Edad||'—') + ' años</div></div>' +
+    '<div><div class="detail-label">Tipo Sangre</div><div class="detail-value">' + (p.TipoSangre||'—') + '</div></div>' +
+    '<div><div class="detail-label">Sexo</div><div class="detail-value">' + (p.Sexo||'—') + '</div></div>' +
+    '<div><div class="detail-label">Estado</div><div class="detail-value">' + (p.Estado||'Activo') + '</div></div>' +
+    '</div></div>' +
+    '<div class="detail-section"><div class="detail-label">Antecedentes</div><div class="detail-value" style="margin-top:4px">' + (p.AntecedentesPatologicos||'Ninguno') + '</div></div>' +
+    '<div class="detail-section"><div class="detail-label">Alergias</div><div class="detail-value" style="margin-top:4px">' + (p.Alergias||'Ninguna') + '</div></div>' +
+    (p.Observaciones ? '<div class="detail-section"><div class="detail-label">Observaciones</div><div class="detail-value" style="margin-top:4px">' + p.Observaciones + '</div></div>' : '') +
+    '<div class="detail-section"><div class="detail-label" style="margin-bottom:8px">Atenciones (' + atPac.length + ')</div>' +
+    (atPac.length === 0 ? '<div style="color:var(--muted);font-size:13px">Sin atenciones registradas</div>' :
+      atPac.map(function(a) {
+        return '<div style="padding:8px 0;border-bottom:1px solid var(--silver)">' +
+          '<div style="display:flex;justify-content:space-between">' +
+          '<div style="font-size:13px;font-weight:500;color:var(--navy)">' + formatDate(a.Fecha) + '</div>' +
+          '<span class="status ' + statusClass(a.Estado) + '">' + (a.Estado||'—') + '</span></div>' +
+          '<div style="font-size:12px;color:var(--muted);margin-top:3px">' + (a.TipoAtencion||'') + (a.MotivoConsulta ? ' · ' + a.MotivoConsulta : '') + '</div>' +
+          (a.Observaciones ? '<div style="font-size:12px;color:var(--muted);margin-top:2px">' + a.Observaciones + '</div>' : '') +
+          '</div>';
+      }).join('')) +
+    '</div></div>';
+  document.getElementById('modal-detail').classList.add('open');
+}
+
+// ═══════════════════════════════════════
+// REPORTES
+// ═══════════════════════════════════════
+function setReportTab(tab, el) {
+  currentReportTab = tab;
+  document.querySelectorAll('.report-tab').forEach(function(b) { b.classList.remove('active'); });
+  el.classList.add('active');
+  renderReportes();
+}
+
+function renderReportes() {
+  var body = document.getElementById('report-body');
+  if (currentReportTab === 'semanal')  body.innerHTML = buildSemanal();
+  if (currentReportTab === 'mensual')  body.innerHTML = buildMensual();
+  if (currentReportTab === 'paciente') body.innerHTML = buildPacienteReport();
+  if (currentReportTab === 'ingresos') body.innerHTML = buildIngresos();
+}
+
+function buildSemanal() {
+  var rng      = getWeekRange(reportWeekOffset);
+  var filtered = atenciones.filter(function(a) { var f = new Date(a.Fecha); return f >= rng.start && f <= rng.end; });
+  var total    = filtered.reduce(function(s,a) { return s + Number(a.Precio||0); }, 0);
+  var comp     = filtered.filter(function(a) { return a.Estado === 'Completada'; }).length;
+  var rows     = filtered.sort(function(a,b) { return a.Fecha > b.Fecha ? 1 : -1; }).map(function(a) {
+    var pac = pacientes.find(function(p) { return p.ID === a.PacienteID; }) || {};
+    return '<div class="report-row"><div><div class="report-row-name">' + (pac.NombreCompleto||'—') + '</div>' +
+      '<div style="font-size:11px;color:var(--muted)">' + formatDate(a.Fecha) + ' · ' + (a.TipoAtencion||'—') + '</div></div>' +
+      '<div style="text-align:right"><div class="report-row-val">$' + Number(a.Precio||0).toFixed(2) + '</div>' +
+      '<span class="status ' + statusClass(a.Estado) + '" style="margin-top:3px;display:inline-block">' + (a.Estado||'—') + '</span></div></div>';
+  }).join('') || '<div style="padding:16px;color:var(--muted);font-size:13px">Sin atenciones esta semana</div>';
+
+  return '<div class="report-nav">' +
+    '<button onclick="reportWeekOffset--;renderReportes()"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>' +
+    '<div class="report-nav-label">' + weekLabel(rng.start, rng.end) + '</div>' +
+    '<button onclick="if(reportWeekOffset<0){reportWeekOffset++;renderReportes()}"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 20px 14px">' +
+    '<div class="report-summary"><div class="report-summary-title">Total</div><div class="report-summary-val">$' + total.toFixed(2) + '</div><div class="report-summary-sub">' + filtered.length + ' atenciones</div></div>' +
+    '<div class="report-summary"><div class="report-summary-title">Completadas</div><div class="report-summary-val">' + comp + '</div><div class="report-summary-sub">de ' + filtered.length + '</div></div></div>' +
+    '<div class="report-card">' + rows + '</div>';
+}
+
+function buildMensual() {
+  var mo      = getMonthOffset(reportMonthOffset);
+  var meses   = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var filtered = atenciones.filter(function(a) { var f = new Date(a.Fecha); return f.getFullYear()===mo.year && f.getMonth()===mo.month; });
+  var total    = filtered.reduce(function(s,a) { return s + Number(a.Precio||0); }, 0);
+  var byWeek   = {};
+  filtered.forEach(function(a) { var w = getWeekOfMonth(new Date(a.Fecha)); if (!byWeek[w]) byWeek[w] = []; byWeek[w].push(a); });
+  var weekRows = Object.keys(byWeek).sort().map(function(w) {
+    var sub = byWeek[w]; var wTotal = sub.reduce(function(s,a) { return s + Number(a.Precio||0); }, 0);
+    return '<div class="report-row"><div class="report-row-name">Semana ' + w + '</div>' +
+      '<div style="text-align:right"><div class="report-row-val">$' + wTotal.toFixed(2) + '</div>' +
+      '<div style="font-size:11px;color:var(--muted)">' + sub.length + ' atenciones</div></div></div>';
+  }).join('') || '<div style="padding:16px;color:var(--muted);font-size:13px">Sin atenciones este mes</div>';
+
+  return '<div class="report-nav">' +
+    '<button onclick="reportMonthOffset--;renderReportes()"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>' +
+    '<div class="report-nav-label">' + meses[mo.month] + ' ' + mo.year + '</div>' +
+    '<button onclick="if(reportMonthOffset<0){reportMonthOffset++;renderReportes()}"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 20px 14px">' +
+    '<div class="report-summary"><div class="report-summary-title">Total mes</div><div class="report-summary-val">$' + total.toFixed(2) + '</div><div class="report-summary-sub">' + filtered.length + ' atenciones</div></div>' +
+    '<div class="report-summary"><div class="report-summary-title">Promedio/aten.</div><div class="report-summary-val">$' + (filtered.length ? (total/filtered.length).toFixed(2) : '0.00') + '</div><div class="report-summary-sub">por atención</div></div></div>' +
+    '<div class="report-card">' + weekRows + '</div>';
+}
+
+function buildPacienteReport() {
+  var opts = pacientes.sort(function(a,b) { return (a.NombreCompleto||'').localeCompare(b.NombreCompleto||''); })
+    .map(function(p) { return '<option value="' + p.ID + '"' + (p.ID===reportPacienteID?' selected':'') + '>' + p.NombreCompleto + '</option>'; }).join('');
+  var detail = '';
+  if (reportPacienteID) {
+    var pac    = pacientes.find(function(p) { return p.ID === reportPacienteID; }) || {};
+    var atPac  = atenciones.filter(function(a) { return a.PacienteID === reportPacienteID; }).sort(function(a,b) { return b.Fecha > a.Fecha ? 1 : -1; });
+    var totPac = atPac.reduce(function(s,a) { return s + Number(a.Precio||0); }, 0);
+    var rows   = atPac.map(function(a) {
+      return '<div class="report-row"><div>' +
+        '<div class="report-row-name">' + formatDate(a.Fecha) + ' ' + formatHora(a.Hora) + '</div>' +
+        '<div style="font-size:11px;color:var(--muted)">' + (a.TipoAtencion||'—') + (a.MotivoConsulta ? ' · ' + a.MotivoConsulta : '') + '</div>' +
+        (a.Observaciones ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + a.Observaciones + '</div>' : '') +
+        '</div><div style="text-align:right"><div class="report-row-val">$' + Number(a.Precio||0).toFixed(2) + '</div>' +
+        '<span class="status ' + statusClass(a.Estado) + '" style="margin-top:3px;display:inline-block">' + (a.Estado||'—') + '</span></div></div>';
+    }).join('') || '<div style="padding:16px;color:var(--muted);font-size:13px">Sin atenciones</div>';
+    detail = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 20px 14px">' +
+      '<div class="report-summary"><div class="report-summary-title">Total pagado</div><div class="report-summary-val">$' + totPac.toFixed(2) + '</div><div class="report-summary-sub">' + atPac.length + ' atenciones</div></div>' +
+      '<div class="report-summary"><div class="report-summary-title">Última visita</div><div class="report-summary-val" style="font-size:16px">' + (atPac.length ? formatDate(atPac[0].Fecha) : '—') + '</div></div></div>' +
+      '<div class="report-card">' + rows + '</div>';
+  }
+  return '<div style="margin:16px 20px 14px">' +
+    '<select style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:8px;font-family:\'Segoe UI\',Arial,sans-serif;font-size:14px;color:var(--text);outline:none" onchange="reportPacienteID=this.value;renderReportes()">' +
+    '<option value="">— Seleccionar paciente —</option>' + opts + '</select></div>' + detail;
+}
+
+function buildIngresos() {
+  var mo    = getMonthOffset(reportIngresosOffset);
+  var meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var all   = atenciones.filter(function(a) {
+    if (reportIngresosMode === 'mensual') { var f = new Date(a.Fecha); return f.getFullYear()===mo.year && f.getMonth()===mo.month; }
+    return true;
+  }).filter(function(a) { return a.Estado === 'Completada'; });
+  var total  = all.reduce(function(s,a) { return s + Number(a.Precio||0); }, 0);
+  var byPac  = {};
+  all.forEach(function(a) { if (!byPac[a.PacienteID]) byPac[a.PacienteID] = 0; byPac[a.PacienteID] += Number(a.Precio||0); });
+  var pacRows = Object.entries(byPac).sort(function(a,b) { return b[1]-a[1]; }).map(function(entry) {
+    var pac = pacientes.find(function(p) { return p.ID === entry[0]; }) || {};
+    return '<div class="report-row"><div class="report-row-name">' + (pac.NombreCompleto||'Paciente') + '</div><div class="report-row-val">$' + entry[1].toFixed(2) + '</div></div>';
+  }).join('') || '<div style="padding:16px;color:var(--muted);font-size:13px">Sin ingresos registrados</div>';
+
+  var navHtml = reportIngresosMode === 'mensual' ?
+    '<div class="report-nav">' +
+    '<button onclick="reportIngresosOffset--;renderReportes()"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>' +
+    '<div class="report-nav-label">' + meses[mo.month] + ' ' + mo.year + '</div>' +
+    '<button onclick="if(reportIngresosOffset<0){reportIngresosOffset++;renderReportes()}"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button></div>' : '';
+
+  return '<div style="display:flex;gap:8px;margin:16px 20px 4px">' +
+    '<button class="report-tab ' + (reportIngresosMode==='mensual'?'active':'') + '" onclick="reportIngresosMode=\'mensual\';renderReportes()">Por mes</button>' +
+    '<button class="report-tab ' + (reportIngresosMode==='total'?'active':'') + '" onclick="reportIngresosMode=\'total\';renderReportes()">Total</button></div>' +
+    navHtml +
+    '<div style="margin:10px 20px 14px"><div class="report-summary">' +
+    '<div class="report-summary-title">Ingresos ' + (reportIngresosMode==='mensual'?'del mes':'totales') + ' (completadas)</div>' +
+    '<div class="report-summary-val">$' + total.toFixed(2) + '</div>' +
+    '<div class="report-summary-sub">' + all.length + ' atenciones completadas</div></div></div>' +
+    '<div style="margin:0 20px 6px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">Por paciente</div>' +
+    '<div class="report-card">' + pacRows + '</div>';
+}
+
+// ═══════════════════════════════════════
+// EXPORTAR PDF
+// ═══════════════════════════════════════
+function exportarPDF() {
+  var btn = document.getElementById('btnPDF');
+  btn.disabled = true;
+  btn.textContent = 'Generando...';
+
+  try {
+    var doc    = new window.jspdf.jsPDF();
+    var titulo = 'Reporte MedControl';
+    var fecha  = new Date().toLocaleDateString('es-PA');
+    var lineas = [];
+    var meses  = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+    if (currentReportTab === 'semanal') {
+      var rng      = getWeekRange(reportWeekOffset);
+      titulo       = 'Reporte Semanal - ' + weekLabel(rng.start, rng.end);
+      var filtered = atenciones.filter(function(a) { var f = new Date(a.Fecha); return f >= rng.start && f <= rng.end; });
+      var total    = filtered.reduce(function(s,a) { return s + Number(a.Precio||0); }, 0);
+      lineas.push('Total: $' + total.toFixed(2) + ' | Atenciones: ' + filtered.length);
+      lineas.push('');
+      filtered.sort(function(a,b) { return a.Fecha > b.Fecha ? 1 : -1; }).forEach(function(a) {
+        var pac = pacientes.find(function(p) { return p.ID === a.PacienteID; }) || {};
+        lineas.push(formatDate(a.Fecha) + ' ' + formatHora(a.Hora) + ' - ' + (pac.NombreCompleto||'—'));
+        lineas.push('Tipo: ' + (a.TipoAtencion||'—') + '  Estado: ' + (a.Estado||'—') + '  Precio: $' + Number(a.Precio||0).toFixed(2));
+        if (a.MotivoConsulta) lineas.push('Motivo: ' + a.MotivoConsulta);
+        if (a.Observaciones)  lineas.push('Obs: ' + a.Observaciones);
+        lineas.push('---');
+      });
+    }
+
+    else if (currentReportTab === 'mensual') {
+      var mo       = getMonthOffset(reportMonthOffset);
+      titulo       = 'Reporte Mensual - ' + meses[mo.month] + ' ' + mo.year;
+      var filtered = atenciones.filter(function(a) { var f = new Date(a.Fecha); return f.getFullYear()===mo.year && f.getMonth()===mo.month; });
+      var total    = filtered.reduce(function(s,a) { return s + Number(a.Precio||0); }, 0);
+      lineas.push('Total: $' + total.toFixed(2) + ' | Atenciones: ' + filtered.length);
+      lineas.push('Promedio por atención: $' + (filtered.length ? (total/filtered.length).toFixed(2) : '0.00'));
+      lineas.push('');
+      filtered.sort(function(a,b) { return a.Fecha > b.Fecha ? 1 : -1; }).forEach(function(a) {
+        var pac = pacientes.find(function(p) { return p.ID === a.PacienteID; }) || {};
+        lineas.push(formatDate(a.Fecha) + ' - ' + (pac.NombreCompleto||'—') + ' - $' + Number(a.Precio||0).toFixed(2) + ' - ' + (a.Estado||'—'));
+      });
+    }
+
+    else if (currentReportTab === 'paciente') {
+      if (!reportPacienteID) { showToast('⚠ Selecciona un paciente'); btn.disabled=false; btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Exportar PDF'; return; }
+      var pac   = pacientes.find(function(p) { return p.ID === reportPacienteID; }) || {};
+      var atPac = atenciones.filter(function(a) { return a.PacienteID === reportPacienteID; }).sort(function(a,b) { return b.Fecha > a.Fecha ? 1 : -1; });
+      titulo    = 'Historial - ' + (pac.NombreCompleto||'Paciente');
+      lineas.push('Cédula: ' + (pac.Cedula||'—') + '  Teléfono: ' + (pac.Telefono||'—'));
+      lineas.push('Edad: ' + (calcEdad(pac.FechaNacimiento)||pac.Edad||'—') + '  Sangre: ' + (pac.TipoSangre||'—'));
+      lineas.push('Antecedentes: ' + (pac.AntecedentesPatologicos||'Ninguno'));
+      lineas.push('Alergias: ' + (pac.Alergias||'Ninguna'));
+      lineas.push('');
+      lineas.push('ATENCIONES (' + atPac.length + ')');
+      lineas.push('');
+      atPac.forEach(function(a) {
+        lineas.push(formatDate(a.Fecha) + ' ' + formatHora(a.Hora));
+        lineas.push('Tipo: ' + (a.TipoAtencion||'—') + '  Estado: ' + (a.Estado||'—') + '  Precio: $' + Number(a.Precio||0).toFixed(2));
+        if (a.MotivoConsulta) lineas.push('Motivo: ' + a.MotivoConsulta);
+        if (a.Observaciones)  lineas.push('Obs: ' + a.Observaciones);
+        lineas.push('---');
+      });
+    }
+
+    else if (currentReportTab === 'ingresos') {
+      var mo      = getMonthOffset(reportIngresosOffset);
+      titulo      = reportIngresosMode === 'mensual' ? 'Ingresos - ' + meses[mo.month] + ' ' + mo.year : 'Ingresos Totales';
+      var all     = atenciones.filter(function(a) {
+        if (reportIngresosMode === 'mensual') { var f = new Date(a.Fecha); return f.getFullYear()===mo.year && f.getMonth()===mo.month; }
+        return true;
+      }).filter(function(a) { return a.Estado === 'Completada'; });
+      var total   = all.reduce(function(s,a) { return s + Number(a.Precio||0); }, 0);
+      lineas.push('Total ingresos: $' + total.toFixed(2));
+      lineas.push('Atenciones completadas: ' + all.length);
+      lineas.push('');
+      all.sort(function(a,b) { return a.Fecha > b.Fecha ? 1 : -1; }).forEach(function(a) {
+        var pac = pacientes.find(function(p) { return p.ID === a.PacienteID; }) || {};
+        lineas.push(formatDate(a.Fecha) + ' - ' + (pac.NombreCompleto||'—') + ' - $' + Number(a.Precio||0).toFixed(2));
+      });
+    }
+
+    // GENERAR PDF
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text(titulo, 14, 18);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('Generado: ' + fecha, 14, 25);
+    doc.setLineWidth(0.3);
+    doc.line(14, 28, 196, 28);
+
+    var y = 35;
+    doc.setFontSize(10);
+    lineas.forEach(function(linea) {
+      var split = doc.splitTextToSize(linea, 180);
+      split.forEach(function(txt) {
+        if (y > 280) { doc.addPage(); y = 20; }
+        doc.text(txt, 14, y);
+        y += 6;
+      });
+    });
+
+    doc.save(titulo.replace(/ /g,'_') + '.pdf');
+    showToast('✓ PDF exportado');
+  } catch(err) {
+    console.error(err);
+    showToast('✗ Error al exportar PDF');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Exportar PDF';
+}
+
+// ═══════════════════════════════════════
+// OVERLAYS
+// ═══════════════════════════════════════
+function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(function(o) {
+  o.addEventListener('click', function(e) { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ═══════════════════════════════════════
+// UTILIDADES
+// ═══════════════════════════════════════
+function calcEdad(fechaNac) {
+  if (!fechaNac) return '';
+  var nac = new Date(fechaNac);
+  if (isNaN(nac)) return '';
+  var hoy = new Date();
+  var edad = hoy.getFullYear() - nac.getFullYear();
+  var m = hoy.getMonth() - nac.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+  return edad >= 0 ? String(edad) : '';
+}
+
+function calcEdadNuevo() {
+  var val = document.getElementById('np-fechanac').value;
+  document.getElementById('np-edad').value = calcEdad(val) ? calcEdad(val) + ' años' : '';
+}
+
+function formatDate(val) {
+  if (!val) return '—';
+  var d = new Date(val);
+  if (isNaN(d)) return String(val).split('T')[0];
+  return d.toLocaleDateString('es-PA', {day:'2-digit', month:'2-digit', year:'numeric'});
+}
+
+function formatHora(val) {
+  if (!val) return '';
+  return String(val).substring(0, 5);
+}
+
+function statusClass(s) {
+  var m = {Completada:'status-completada', Cancelada:'status-cancelada', Pendiente:'status-pendiente', Pospuesta:'status-pospuesta'};
+  return m[s] || '';
+}
+
+function getWeekRange(offset) {
+  var now = new Date(); var day = now.getDay();
+  var mon = new Date(now);
+  mon.setDate(now.getDate() - (day===0?6:day-1) + offset*7);
+  mon.setHours(0,0,0,0);
+  var sun = new Date(mon); sun.setDate(mon.getDate()+6); sun.setHours(23,59,59,999);
+  return {start:mon, end:sun};
+}
+
+function weekLabel(start, end) {
+  return start.getDate() + '/' + (start.getMonth()+1) + ' – ' + end.getDate() + '/' + (end.getMonth()+1) + '/' + end.getFullYear();
+}
+
+function getMonthOffset(offset) {
+  var now = new Date(); var year = now.getFullYear(); var month = now.getMonth() + offset;
+  while (month < 0)  { month += 12; year--; }
+  while (month > 11) { month -= 12; year++; }
+  return {year:year, month:month};
+}
+
+function getWeekOfMonth(d) { return Math.ceil(d.getDate()/7); }
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2800);
+}
+
+// PWA Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').catch(function(e){ console.log('SW error:', e); });
+  });
+}
+</script>
+</body>
+</html>
