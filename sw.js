@@ -1,11 +1,8 @@
-var CACHE_NAME = 'control-medico-v1';
-var urlsToCache = [
-  '/control-medico/',
-  '/control-medico/index.html',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
-];
+var CACHE_NAME = 'control-medico-v2';
+var urlsToCache = ['/', '/index.html'];
 
 self.addEventListener('install', function(event) {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(function(cache) {
       return cache.addAll(urlsToCache);
@@ -14,10 +11,7 @@ self.addEventListener('install', function(event) {
 });
 
 self.addEventListener('fetch', function(event) {
-  // No cachear llamadas al API de Google
-  if (event.request.url.includes('script.google.com')) {
-    return;
-  }
+  if (event.request.url.includes('script.google.com')) return;
   event.respondWith(
     caches.match(event.request).then(function(response) {
       return response || fetch(event.request);
