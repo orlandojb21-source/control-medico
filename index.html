@@ -647,7 +647,12 @@ function openPacienteDetail(id) {
     '<div style="padding:0 20px">' +
     '<div class="detail-section"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
     '<div><div class="detail-label">Cédula</div><div class="detail-value">' + (p.Cedula||'—') + '</div></div>' +
-    '<div><div class="detail-label">Teléfono</div><div class="detail-value">' + (p.Telefono||'—') + '</div></div>' +
+    '<div><div class="detail-label">Teléfono</div><div class="detail-value">' + (p.Telefono||'—') + '</div>' +
+(p.Telefono ? '<div style="display:flex;gap:8px;margin-top:8px">' +
+'<a href="tel:' + p.Telefono + '" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:#e6f4f2;color:#1a7a6e;border-radius:10px;text-decoration:none;font-size:13px;font-weight:500">📞 Llamar</a>' +
+'<a href="https://wa.me/' + p.Telefono.replace(/[^0-9]/g,'') + '" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:#e7f8ee;color:#128C7E;border-radius:10px;text-decoration:none;font-size:13px;font-weight:500">💬 WhatsApp</a>' +
+'</div>' : '') +
+'</div>' +
     '<div><div class="detail-label">Edad</div><div class="detail-value">' + (calcEdad(p.FechaNacimiento)||p.Edad||'—') + ' años</div></div>' +
     '<div><div class="detail-label">Tipo Sangre</div><div class="detail-value">' + (p.TipoSangre||'—') + '</div></div>' +
     '<div><div class="detail-label">Sexo</div><div class="detail-value">' + (p.Sexo||'—') + '</div></div>' +
