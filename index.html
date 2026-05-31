@@ -494,8 +494,7 @@ function guardarAtencion() {
     Lugar: '', Diagnostico: '', Tratamiento: ''
   };
 
-  var params = new URLSearchParams(Object.assign({action:'registrarAtencion'}, data));
-  fetch(API_URL + '?' + params, {redirect: 'follow'})
+  fetch(API_URL, {method:'POST', body:JSON.stringify(Object.assign({action:'registrarAtencion'}, data))})
     .then(function(r){ return r.json(); })
     .then(function(json) {
       if (json.success) {
