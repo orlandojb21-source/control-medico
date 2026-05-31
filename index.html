@@ -495,7 +495,7 @@ function guardarAtencion() {
   };
 
   var params = new URLSearchParams(Object.assign({action:'registrarAtencion'}, data));
-  fetch(API_URL + '?' + params)
+  fetch(API_URL + '?' + params, {redirect: 'follow'})
     .then(function(r){ return r.json(); })
     .then(function(json) {
       if (json.success) {
