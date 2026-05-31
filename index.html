@@ -617,8 +617,7 @@ function guardarNuevoPaciente() {
     Observaciones: document.getElementById('np-obs').value
   };
 
-  var params = new URLSearchParams(Object.assign({action:'agregarPaciente'}, data));
-  fetch(API_URL + '?' + params)
+  fetch(API_URL, {method:'POST', body:JSON.stringify(Object.assign({action:'agregarPaciente'}, data))})
     .then(function(r){ return r.json(); })
     .then(function(json) {
       if (json.success) {
