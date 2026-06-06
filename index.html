@@ -229,6 +229,7 @@
         </select>
       </div>
       <div class="form-group"><label>Motivo de Consulta</label><textarea id="reg-motivo" placeholder="Describe el motivo..."></textarea></div>
+      <div class="form-group"><label>Tratamiento / Medicamentos</label><textarea id="reg-tratamiento" placeholder="Medicamentos indicados..."></textarea></div>
       <div class="form-group"><label>Observaciones / Notas</label><textarea id="reg-obs" placeholder="Notas adicionales..."></textarea></div>
       <button class="btn-primary" onclick="guardarAtencion()" id="btnGuardarAtencion">Guardar Atención</button>
       <div style="height:20px"></div>
@@ -356,6 +357,7 @@
 // ═══════════════════════════════════════
 let pacientes = [];
 let atenciones = [];
+let appRecords = [];
 let currentReportTab = 'semanal';
 let reportWeekOffset = 0;
 let reportMonthOffset = 0;
@@ -396,16 +398,18 @@ function initRegistroDefaults() {
 // ═══════════════════════════════════════
 // CARGA DE DATOS
 // ═══════════════════════════════════════
-var API_URL = "https://script.google.com/macros/s/AKfycbzW-b16KiVBJNVM8iKCmklC82foW4IqvLIjdrQOZ0GU7p8emm4lvqeUT7C2kjEjfjLI/exec";
+var API_URL = "https://script.google.com/macros/s/AKfycbwOg2nM76qWqWx7cfPOQopsmVnB3mQ0P_tZdnPwFVNNAqJmmB-Kgk3i7DWV6TKQYy-q/exec";
 
 function loadAll() {
   return new Promise(function(resolve) {
     Promise.all([
-      fetch(API_URL + '?action=getPacientes').then(function(r){ return r.json(); }),
-      fetch(API_URL + '?action=getAtenciones').then(function(r){ return r.json(); })
-    ]).then(function(results) {
-      try { pacientes  = results[0].success ? results[0].data : []; } catch(e) { pacientes = []; }
-      try { atenciones = results[1].success ? results[1].data : []; } catch(e) { atenciones = []; }
+  fetch(API_URL + '?action=getPacientes').then(function(r){ return r.json(); }),
+  fetch(API_URL + '?action=getAtenciones').then(function(r){ return r.json(); }),
+  fetch(API_URL + '?action=getAPP').then(function(r){ return r.json(); })
+]).then(function(results) {
+  try { pacientes  = results[0].success ? results[0].data : []; } catch(e) { pacientes = []; }
+  try { atenciones = results[1].success ? results[1].data : []; } catch(e) { atenciones = []; }
+  try { appRecords = results[2].success ? results[2].data : []; } catch(e) { appRecords = []; }
       populatePacienteSelect();
       renderPacientes();
       renderHoy();
@@ -476,8 +480,9 @@ function guardarAtencion() {
   var tipo   = document.getElementById('reg-tipo').value;
   var precio = document.getElementById('reg-precio').value;
   var estado = document.getElementById('reg-estado').value;
-  var motivo = document.getElementById('reg-motivo').value;
-  var obs    = document.getElementById('reg-obs').value;
+  var motivo      = document.getElementById('reg-motivo').value;
+  var tratamiento = document.getElementById('reg-tratamiento').value;
+  var obs         = document.getElementById('reg-obs').value;
 
   if (!pacID) { showToast('⚠ Selecciona un paciente'); return; }
   if (!fecha) { showToast('⚠ Indica la fecha'); return; }
@@ -490,7 +495,7 @@ function guardarAtencion() {
   var data = {
     PacienteID: pacID, Fecha: fecha, Hora: hora,
     Precio: String(Number(precio) || 0), TipoAtencion: tipo,
-    MotivoConsulta: motivo, Observaciones: obs, Estado: estado,
+    MotivoConsulta: motivo, Tratamiento: tratamiento, Observaciones: obs, Estado: estado,
     Lugar: '', Diagnostico: '', Tratamiento: ''
   };
 
@@ -642,6 +647,8 @@ function openPacienteDetail(id) {
   var p = pacientes.find(function(x) { return x.ID === id; });
   if (!p) return;
   var atPac = atenciones.filter(function(a) { return a.PacienteID === id; }).sort(function(a,b) { return b.Fecha > a.Fecha ? 1 : -1; });
+  var appPac = appRecords.filter(function(a) { return a.PacienteID === id; }).sort(function(a,b) { return b.Fecha > a.Fecha ? 1 : -1; });
+  var ultimoTratamiento = atPac.find(function(a) { return a.Tratamiento && a.Tratamiento.trim() !== ''; });
   document.getElementById('detail-title').textContent = p.NombreCompleto || 'Paciente';
   document.getElementById('detail-body').innerHTML =
     '<div style="padding:0 20px">' +
@@ -656,7 +663,15 @@ function openPacienteDetail(id) {
     '<div><div class="detail-label">Edad</div><div class="detail-value">' + (calcEdad(p.FechaNacimiento)||p.Edad||'—') + ' años</div></div>' +
     '<div><div class="detail-label">Tipo Sangre</div><div class="detail-value">' + (p.TipoSangre||'—') + '</div></div>' +
     '<div><div class="detail-label">Sexo</div><div class="detail-value">' + (p.Sexo||'—') + '</div></div>' +
-    '<div><div class="detail-label">Estado</div><div class="detail-value">' + (p.Estado||'Activo') + '</div></div>' +
+    '<div class="detail-section" style="background:#f0f9ff;border-radius:10px;padding:12px;margin-bottom:8px">' +
+    '<div class="detail-label" style="color:#0f2a4a;font-weight:700">⚡ VISTA RÁPIDA</div>' +
+    '<div style="margin-top:8px"><div class="detail-label">Último Tratamiento</div>' +
+    '<div class="detail-value" style="margin-top:4px;color:#1a7a6e;font-weight:500">' + (ultimoTratamiento ? ultimoTratamiento.Tratamiento : 'Sin tratamiento registrado') + '</div></div>' +
+    '<div style="margin-top:8px"><div class="detail-label">APP (Antecedentes Personales Patológicos)</div>' +
+    (appPac.length ? appPac.map(function(a) { return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e0f0ff"><div style="font-size:13px;color:#1a2635">' + a.Diagnostico + (a.Notas ? ' — <span style="color:#6b7f96">' + a.Notas + '</span>' : '') + '</div><div style="font-size:11px;color:#6b7f96;white-space:nowrap;margin-left:8px">' + formatDate(a.Fecha) + '</div></div>'; }).join('') : '<div style="font-size:13px;color:#6b7f96;margin-top:4px">Sin registros</div>') +
+    '<button onclick="abrirAgregarAPP(\'' + id + '\')" style="margin-top:10px;width:100%;padding:10px;background:#0f2a4a;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">+ Agregar APP</button>' +
+    '</div></div>' +
+    '<div class="detail-section"><div class="detail-label">Antecedentes Patológicos</div><div class="detail-value" style="margin-top:4px">' + (p.AntecedentesPatologicos||'Ninguno') + '</div></div>' +
     '</div></div>' +
     '<div class="detail-section"><div class="detail-label">Antecedentes</div><div class="detail-value" style="margin-top:4px">' + (p.AntecedentesPatologicos||'Ninguno') + '</div></div>' +
     '<div class="detail-section"><div class="detail-label">Alergias</div><div class="detail-value" style="margin-top:4px">' + (p.Alergias||'Ninguna') + '</div></div>' +
@@ -987,6 +1002,49 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(function() { t.classList.remove('show'); }, 2800);
+}
+
+  function abrirAgregarAPP(pacienteId) {
+  var overlay = document.createElement('div');
+  overlay.id = 'overlay-app';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,42,74,0.5);z-index:400;display:flex;align-items:flex-end;justify-content:center';
+  overlay.innerHTML = 
+    '<div style="background:white;width:100%;max-width:430px;border-radius:20px 20px 0 0;padding:20px 0 40px">' +
+    '<div style="width:36px;height:4px;background:#d8e2ec;border-radius:2px;margin:0 auto 18px"></div>' +
+    '<div style="font-family:Georgia,serif;font-size:20px;color:#0f2a4a;margin:0 20px 18px">Nuevo APP</div>' +
+    '<div style="margin:0 20px 14px"><label style="display:block;font-size:11px;font-weight:600;color:#4a6080;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:5px">Fecha</label>' +
+    '<input type="date" id="app-fecha" style="width:100%;padding:11px 14px;border:1px solid #d8e2ec;border-radius:8px;font-size:14px" /></div>' +
+    '<div style="margin:0 20px 14px"><label style="display:block;font-size:11px;font-weight:600;color:#4a6080;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:5px">Diagnóstico</label>' +
+    '<input type="text" id="app-diagnostico" placeholder="Ej. Hipertensión arterial" style="width:100%;padding:11px 14px;border:1px solid #d8e2ec;border-radius:8px;font-size:14px" /></div>' +
+    '<div style="margin:0 20px 14px"><label style="display:block;font-size:11px;font-weight:600;color:#4a6080;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:5px">Notas</label>' +
+    '<textarea id="app-notas" placeholder="Detalles adicionales..." style="width:100%;padding:11px 14px;border:1px solid #d8e2ec;border-radius:8px;font-size:14px;resize:vertical;min-height:80px"></textarea></div>' +
+    '<button onclick="guardarAPP(\'' + pacienteId + '\')" style="width:calc(100% - 40px);margin:0 20px;background:#0f2a4a;color:white;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:600;cursor:pointer">Guardar APP</button>' +
+    '<button onclick="document.getElementById(\'overlay-app\').remove()" style="width:100%;padding:12px;background:none;border:none;color:#6b7f96;font-size:14px;cursor:pointer;margin-top:6px">Cancelar</button>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  document.getElementById('app-fecha').value = new Date().toISOString().split('T')[0];
+}
+
+function guardarAPP(pacienteId) {
+  var fecha      = document.getElementById('app-fecha').value;
+  var diagnostico = document.getElementById('app-diagnostico').value.trim();
+  var notas      = document.getElementById('app-notas').value;
+  if (!diagnostico) { alert('El diagnóstico es requerido'); return; }
+  var btn = document.querySelector('#overlay-app button');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'agregarAPP', PacienteID: pacienteId, Fecha: fecha, Diagnostico: diagnostico, Notas: notas })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(json) {
+    if (json.success) {
+      appRecords.push({ ID: json.id, PacienteID: pacienteId, Fecha: fecha, Diagnostico: diagnostico, Notas: notas });
+      document.getElementById('overlay-app').remove();
+      openPacienteDetail(pacienteId);
+    } else { alert('Error al guardar'); btn.disabled = false; btn.textContent = 'Guardar APP'; }
+  })
+  .catch(function() { alert('Error de conexión'); btn.disabled = false; btn.textContent = 'Guardar APP'; });
 }
 
 // PWA Service Worker
