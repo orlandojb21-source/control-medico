@@ -1,7 +1,7 @@
 {
   "name": "Control Médico",
   "short_name": "ControlMed",
-  "description": "Sistema de gestión médica Dr. Miguel Cedeño",
+  "description": "Sistema de gestión médica multiusuario",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

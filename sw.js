@@ -1,5 +1,5 @@
-var CACHE_NAME = 'control-medico-v2';
-var urlsToCache = ['/', '/index.html'];
+var CACHE_NAME = 'control-medico-v3';
+var urlsToCache = ['/', '/index.html', '/app.js'];
 
 self.addEventListener('install', function(event) {
   self.skipWaiting();

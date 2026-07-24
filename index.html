@@ -24,7 +24,16 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #e8edf3; display: flex; justify-content: center; min-height: 100vh; }
-    .app { width: 100%; max-width: 430px; background: var(--white); min-height: 100vh; display: flex; flex-direction: column; position: relative; box-shadow: 0 0 40px rgba(0,0,0,0.15); }
+    .app { width: 100%; max-width: 430px; background: var(--white); min-height: 100vh; display: none; flex-direction: column; position: relative; box-shadow: 0 0 40px rgba(0,0,0,0.15); }
+
+    /* LOGIN */
+    .login-screen { position: fixed; inset: 0; background: var(--navy); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px; text-align: center; z-index: 1000; }
+    .login-logo { width: 72px; height: 72px; background: var(--white); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .login-logo svg { width: 52px; height: 52px; }
+    .login-title { color: var(--white); font-family: Georgia, serif; font-size: 24px; margin-top: 6px; }
+    .login-sub { color: rgba(255,255,255,0.6); font-size: 13px; margin-top: -8px; margin-bottom: 8px; }
+    .login-error { color: #ffd0d4; font-size: 13px; max-width: 300px; line-height: 1.5; }
+    .login-error button { margin-top: 12px; background: none; border: 1px solid rgba(255,255,255,0.4); color: var(--white); padding: 9px 18px; border-radius: 8px; cursor: pointer; font-size: 13px; }
 
     /* HEADER */
     .header { background: var(--navy); padding: 16px 20px 14px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
@@ -35,6 +44,18 @@
     .header-title h1 { font-family: Georgia, serif; font-size: 18px; letter-spacing: 0.5px; }
     .header-title p { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 1px; }
     .header-date { color: rgba(255,255,255,0.6); font-size: 11px; text-align: right; }
+    .user-bar button { background: none; border: none; color: rgba(255,255,255,0.6); font-size: 11px; cursor: pointer; text-decoration: underline; padding: 0; }
+
+    /* DOCTOR SWITCH */
+    .doctor-switch { margin: 12px 20px 0; }
+    .doctor-switch select { width: 100%; padding: 9px 12px; border: 1px solid #b2d8d3; border-radius: 8px; font-size: 13px; background: var(--teal-lt); color: var(--navy); font-weight: 600; font-family: 'Segoe UI', Arial, sans-serif; }
+
+    /* BIOMETRIC BANNER */
+    .bio-banner { margin: 12px 20px 0; background: var(--teal-lt); border: 1px solid #b2d8d3; border-radius: 12px; padding: 12px 14px; font-size: 12px; color: var(--navy); display: none; align-items: center; justify-content: space-between; gap: 10px; }
+    .bio-banner .bio-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .bio-banner button { border: none; border-radius: 8px; padding: 7px 10px; font-size: 11px; font-weight: 600; cursor: pointer; }
+    .bio-banner .activar { background: var(--teal); color: white; }
+    .bio-banner .descartar { background: none; color: var(--muted); }
 
     /* CONTENT */
     .content { flex: 1; overflow-y: auto; padding-bottom: 80px; }
@@ -96,7 +117,7 @@
     .hoy-date-label { font-size: 11px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.5px; }
     .hoy-date-value { font-family: Georgia, serif; font-size: 20px; margin-top: 3px; }
     .hoy-count { font-size: 12px; opacity: 0.7; margin-top: 6px; }
-    .atencion-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin: 0 20px 10px; }
+    .atencion-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin: 0 20px 10px; cursor: pointer; }
     .atencion-top { display: flex; justify-content: space-between; align-items: flex-start; }
     .atencion-name { font-size: 15px; font-weight: 600; color: var(--navy); }
     .atencion-meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
@@ -156,7 +177,23 @@
   </style>
 </head>
 <body>
-<div class="app">
+
+<div class="login-screen" id="pantallaLogin">
+  <div class="login-logo">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 3v18" stroke="#0f2a4a" stroke-width="2" stroke-linecap="round"/>
+      <path d="M9 6c0 0 6-1 6 2s-6 2-6 4s6 1 6 3" stroke="#1a7a6e" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+      <path d="M10 4c1-1.5 4-1.5 4 0" stroke="#0f2a4a" stroke-width="1.5" fill="none"/>
+      <path d="M10 20c1 1.5 4 1.5 4 0" stroke="#0f2a4a" stroke-width="1.5" fill="none"/>
+    </svg>
+  </div>
+  <div class="login-title">Control Médico</div>
+  <div class="login-sub">Inicia sesión con tu cuenta de Google para continuar</div>
+  <div id="gsiButton"></div>
+  <div class="login-error" id="loginError" style="display:none"></div>
+</div>
+
+<div class="app" id="app">
 
   <header class="header">
     <div class="header-brand">
@@ -174,10 +211,23 @@
       </div>
     </div>
     <div style="text-align:right">
-      <div style="color:rgba(255,255,255,0.95);font-size:12px;font-weight:600;font-family:Georgia,serif">Dr. Miguel Cedeño</div>
+      <div style="color:rgba(255,255,255,0.95);font-size:12px;font-weight:600;font-family:Georgia,serif" id="headerUserName">—</div>
       <div class="header-date" id="headerDate"></div>
+      <div class="user-bar" style="justify-content:flex-end;display:flex;margin-top:2px"><button onclick="cerrarSesion()">Cerrar sesión</button></div>
     </div>
   </header>
+
+  <div class="doctor-switch" id="doctorSwitchWrap" style="display:none">
+    <select id="doctorSwitchSelect" onchange="onCambiarDoctor()"></select>
+  </div>
+
+  <div class="bio-banner" id="bioBanner">
+    <div>¿Activar desbloqueo con huella/Face ID en este celular?</div>
+    <div class="bio-actions">
+      <button class="activar" onclick="activarBiometrico()">Activar</button>
+      <button class="descartar" onclick="descartarBiometrico()">Ahora no</button>
+    </div>
+  </div>
 
   <main class="content">
 
@@ -304,7 +354,7 @@
   </nav>
 </div>
 
-<!-- MODAL: Nuevo Paciente -->
+<!-- MODAL: Nuevo/Editar Paciente -->
 <div class="overlay" id="modal-addpac">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -348,711 +398,45 @@
   </div>
 </div>
 
+<!-- MODAL: Editar Atención -->
+<div class="overlay" id="modal-editatencion">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Editar Atención</div>
+    <div class="form-row">
+      <div class="form-group"><label>Fecha</label><input type="date" id="edt-fecha"></div>
+      <div class="form-group"><label>Hora</label><input type="time" id="edt-hora"></div>
+    </div>
+    <div class="form-group">
+      <label>Tipo de Atención</label>
+      <select id="edt-tipo">
+        <option value="">— Seleccionar —</option>
+        <option>Consulta</option><option>Domicilio</option><option>Seguimiento</option><option>Control</option><option>Urgencia</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Precio (USD)</label><input type="number" id="edt-precio" min="0" step="0.01"></div>
+    <div class="form-group">
+      <label>Estado</label>
+      <select id="edt-estado">
+        <option value="Completada">Completada</option>
+        <option value="Pendiente">Pendiente</option>
+        <option value="Pospuesta">Pospuesta</option>
+        <option value="Cancelada">Cancelada</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Motivo de Consulta</label><textarea id="edt-motivo"></textarea></div>
+    <div class="form-group"><label>Tratamiento / Medicamentos</label><textarea id="edt-tratamiento"></textarea></div>
+    <div class="form-group"><label>Observaciones / Notas</label><textarea id="edt-obs"></textarea></div>
+    <button class="btn-primary" onclick="guardarEdicionAtencion()" id="btnGuardarEdicionAtencion">Guardar Cambios</button>
+    <div style="height:12px"></div>
+    <button style="width:100%;padding:12px;background:none;border:none;color:var(--muted);font-family:'Segoe UI',Arial,sans-serif;font-size:14px;cursor:pointer" onclick="closeOverlay('modal-editatencion')">Cancelar</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script>
-// ═══════════════════════════════════════
-// ESTADO GLOBAL
-// ═══════════════════════════════════════
-let pacientes = [];
-let atenciones = [];
-let appRecords = [];
-let currentReportTab = 'semanal';
-let reportWeekOffset = 0;
-let reportMonthOffset = 0;
-let reportPacienteID = '';
-let reportIngresosMode = 'mensual';
-let reportIngresosOffset = 0;
-
-// ═══════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════
-window.onload = function() {
-  setHeaderDate();
-  initRegistroDefaults();
-  showToast('Cargando datos...');
-  loadAll().then(function() {
-    renderReportes();
-    showToast('✓ Datos cargados');
-  });
-};
-
-function setHeaderDate() {
-  var now = new Date();
-  var dias   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-  var meses  = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  var mesesF = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  document.getElementById('headerDate').textContent = dias[now.getDay()] + ' ' + now.getDate() + ' ' + meses[now.getMonth()];
-  document.getElementById('hoy-date-str').textContent = dias[now.getDay()] + ', ' + now.getDate() + ' de ' + mesesF[now.getMonth()] + ' ' + now.getFullYear();
-}
-
-function initRegistroDefaults() {
-  var now = new Date();
-  document.getElementById('reg-fecha').value = now.toISOString().split('T')[0];
-  var hh = String(now.getHours()).padStart(2,'0');
-  var mm = String(now.getMinutes()).padStart(2,'0');
-  document.getElementById('reg-hora').value = hh + ':' + mm;
-}
-
-// ═══════════════════════════════════════
-// CARGA DE DATOS
-// ═══════════════════════════════════════
-var API_URL = "https://script.google.com/macros/s/AKfycbzXyH8x1jvetnlkilUkIGBgCn3hl1jCTj5XLehYGeofZp7E1yOhmuxaDy-UZf-xAg84/exec";
-
-function loadAll() {
-  return new Promise(function(resolve) {
-    Promise.all([
-  fetch(API_URL + '?action=getPacientes').then(function(r){ return r.json(); }),
-  fetch(API_URL + '?action=getAtenciones').then(function(r){ return r.json(); }),
-  fetch(API_URL + '?action=getAPP').then(function(r){ return r.json(); })
-]).then(function(results) {
-  try { pacientes  = results[0].success ? results[0].data : []; } catch(e) { pacientes = []; }
-  try { atenciones = results[1].success ? results[1].data : []; } catch(e) { atenciones = []; }
-  try { appRecords = results[2].success ? results[2].data : []; } catch(e) { appRecords = []; }
-      populatePacienteSelect();
-      renderPacientes();
-      renderHoy();
-      resolve();
-    }).catch(function() {
-      pacientes = []; atenciones = [];
-      showToast('⚠ Sin conexión con el servidor');
-      resolve();
-    });
-  });
-}
-
-// ═══════════════════════════════════════
-// NAVEGACIÓN
-// ═══════════════════════════════════════
-function setScreen(name, btn) {
-  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
-  document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
-  document.getElementById('screen-' + name).classList.add('active');
-  btn.classList.add('active');
-  var subs = {registro:'Nueva atención', hoy:'Atenciones del día', pacientes:'Directorio', reportes:'Estadísticas'};
-  document.getElementById('headerSub').textContent = subs[name] || '';
-  if (name === 'reportes')  renderReportes();
-  if (name === 'hoy')       renderHoy();
-  if (name === 'pacientes') renderPacientes();
-  if (name === 'registro')  populatePacienteSelect();
-}
-
-// ═══════════════════════════════════════
-// REGISTRO
-// ═══════════════════════════════════════
-function populatePacienteSelect() {
-  var sel = document.getElementById('reg-paciente');
-  var cur = sel.value;
-  sel.innerHTML = '<option value="">— Seleccionar paciente —</option>';
-  pacientes
-    .filter(function(p) { return (p.Estado || 'Activo') === 'Activo'; })
-    .sort(function(a,b) { return (a.NombreCompleto||'').localeCompare(b.NombreCompleto||''); })
-    .forEach(function(p) {
-      var opt = document.createElement('option');
-      opt.value = p.ID;
-      opt.textContent = p.NombreCompleto;
-      sel.appendChild(opt);
-    });
-  if (cur) sel.value = cur;
-}
-
-function onSelectPaciente() {
-  var id = document.getElementById('reg-paciente').value;
-  var preview = document.getElementById('reg-preview');
-  if (!id) { preview.style.display = 'none'; return; }
-  var p = pacientes.find(function(x) { return x.ID === id; });
-  if (!p) { preview.style.display = 'none'; return; }
-  document.getElementById('prev-nombre').textContent       = p.NombreCompleto || '—';
-  document.getElementById('prev-cedula').textContent       = p.Cedula || '—';
-  document.getElementById('prev-edad').textContent         = calcEdad(p.FechaNacimiento) || p.Edad || '—';
-  document.getElementById('prev-fechanac').textContent     = formatDate(p.FechaNacimiento) || '—';
-  document.getElementById('prev-sangre').textContent       = p.TipoSangre || '—';
-  document.getElementById('prev-antecedentes').textContent = p.AntecedentesPatologicos || 'Ninguno';
-  document.getElementById('prev-alergias').textContent     = p.Alergias || 'Ninguna';
-  preview.style.display = 'block';
-}
-
-function guardarAtencion() {
-  var pacID  = document.getElementById('reg-paciente').value;
-  var fecha  = document.getElementById('reg-fecha').value;
-  var hora   = document.getElementById('reg-hora').value;
-  var tipo   = document.getElementById('reg-tipo').value;
-  var precio = document.getElementById('reg-precio').value;
-  var estado = document.getElementById('reg-estado').value;
-  var motivo      = document.getElementById('reg-motivo').value;
-  var tratamiento = document.getElementById('reg-tratamiento').value;
-  var obs         = document.getElementById('reg-obs').value;
-
-  if (!pacID) { showToast('⚠ Selecciona un paciente'); return; }
-  if (!fecha) { showToast('⚠ Indica la fecha'); return; }
-  if (!hora)  { showToast('⚠ Indica la hora'); return; }
-
-  var btn = document.getElementById('btnGuardarAtencion');
-  btn.disabled = true;
-  btn.textContent = 'Guardando...';
-
-  var data = {
-    PacienteID: pacID, Fecha: fecha, Hora: hora,
-    Precio: String(Number(precio) || 0), TipoAtencion: tipo,
-    MotivoConsulta: motivo, Tratamiento: tratamiento, Observaciones: obs, Estado: estado,
-    Lugar: '', Diagnostico: '', Tratamiento: ''
-  };
-
-  fetch(API_URL, {method:'POST', body:JSON.stringify(Object.assign({action:'registrarAtencion'}, data))})
-    .then(function(r){ return r.json(); })
-    .then(function(json) {
-      if (json.success) {
-        showToast('✓ Atención registrada');
-        document.getElementById('reg-paciente').value = '';
-        document.getElementById('reg-motivo').value   = '';
-        document.getElementById('reg-obs').value      = '';
-        document.getElementById('reg-precio').value   = '';
-        document.getElementById('reg-preview').style.display = 'none';
-        initRegistroDefaults();
-        loadAll();
-      } else { showToast('✗ Error al guardar'); }
-      btn.disabled = false;
-      btn.textContent = 'Guardar Atención';
-    })
-    .catch(function() {
-      showToast('✗ Error de conexión');
-      btn.disabled = false;
-      btn.textContent = 'Guardar Atención';
-    });
-}
-
-// ═══════════════════════════════════════
-// HOY
-// ═══════════════════════════════════════
-function renderHoy() {
-  var now   = new Date();
-  var today = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
-  var cont  = document.getElementById('hoy-lista');
-
-  var todayAten = atenciones.filter(function(a) {
-    if (!a.Fecha) return false;
-    var d  = new Date(a.Fecha);
-    var fy = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-    return fy === today;
-  });
-
-  document.getElementById('hoy-count').textContent =
-    todayAten.length + ' atención' + (todayAten.length !== 1 ? 'es' : '') + ' registrada' + (todayAten.length !== 1 ? 's' : '');
-
-  if (todayAten.length === 0) {
-    cont.innerHTML = '<div class="empty"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><p>Sin atenciones hoy</p></div>';
-    return;
-  }
-
-  cont.innerHTML = todayAten
-    .sort(function(a,b) { return (a.Hora||'').localeCompare(b.Hora||''); })
-    .map(function(a) {
-      var pac = pacientes.find(function(p) { return p.ID === a.PacienteID; }) || {};
-      return '<div class="atencion-card"><div class="atencion-top"><div>' +
-        '<div class="atencion-name">' + (pac.NombreCompleto||'Paciente') + '</div>' +
-        '<div class="atencion-meta">Céd. ' + (pac.Cedula||'—') + ' · Tel. ' + (pac.Telefono||'—') + '</div>' +
-        (a.TipoAtencion ? '<div class="atencion-meta" style="margin-top:3px">' + a.TipoAtencion + '</div>' : '') +
-        '</div><div style="text-align:right">' +
-        '<span class="status ' + statusClass(a.Estado) + '">' + (a.Estado||'—') + '</span>' +
-        '<div class="atencion-hora" style="margin-top:5px">' + formatHora(a.Hora) + '</div>' +
-        '</div></div></div>';
-    }).join('');
-}
-
-// ═══════════════════════════════════════
-// PACIENTES
-// ═══════════════════════════════════════
-function renderPacientes() {
-  var q    = (document.getElementById('pac-search') ? document.getElementById('pac-search').value : '').toLowerCase();
-  var cont = document.getElementById('pac-lista');
-  var filtered = pacientes.filter(function(p) {
-    return (p.NombreCompleto||'').toLowerCase().includes(q) || (p.Cedula||'').toLowerCase().includes(q);
-  });
-
-  document.getElementById('pac-count').textContent =
-    pacientes.length + ' paciente' + (pacientes.length!==1?'s':'') + ' registrado' + (pacientes.length!==1?'s':'');
-
-  if (filtered.length === 0) {
-    cont.innerHTML = '<div class="empty"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p>Sin resultados</p></div>';
-    return;
-  }
-
-  cont.innerHTML = filtered
-    .sort(function(a,b) { return (a.NombreCompleto||'').localeCompare(b.NombreCompleto||''); })
-    .map(function(p) {
-      var edad = calcEdad(p.FechaNacimiento) ? calcEdad(p.FechaNacimiento) + ' años' : (p.Edad||'—');
-      return '<div class="card" onclick="openPacienteDetail(\'' + p.ID + '\')" style="cursor:pointer">' +
-        '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div>' +
-        '<div class="patient-name">' + (p.NombreCompleto||'—') + '</div>' +
-        '<div class="patient-sub">Céd. ' + (p.Cedula||'—') + ' · Tel. ' + (p.Telefono||'—') + '</div>' +
-        '</div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b0bec5" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div>' +
-        '<div class="patient-meta">' +
-        '<span class="meta-badge">' + edad + '</span>' +
-        (p.TipoSangre ? '<span class="meta-badge">' + p.TipoSangre + '</span>' : '') +
-        '<span class="meta-badge">' + (p.Estado||'Activo') + '</span>' +
-        '</div></div>';
-    }).join('');
-}
-
-function openAddPaciente() {
-  document.getElementById('modal-addpac').classList.add('open');
-}
-
-function guardarNuevoPaciente() {
-  var nombre = document.getElementById('np-nombre').value.trim();
-  if (!nombre) { showToast('⚠ El nombre es requerido'); return; }
-
-  var btn = document.getElementById('btnGuardarPac');
-  btn.disabled = true;
-  btn.textContent = 'Guardando...';
-
-  var data = {
-    NombreCompleto: nombre,
-    Cedula: document.getElementById('np-cedula').value,
-    FechaNacimiento: document.getElementById('np-fechanac').value,
-    Edad: document.getElementById('np-edad').value,
-    Sexo: document.getElementById('np-sexo').value,
-    TipoSangre: document.getElementById('np-sangre').value,
-    Telefono: document.getElementById('np-telefono').value,
-    Direccion: document.getElementById('np-direccion').value,
-    AntecedentesPatologicos: document.getElementById('np-antecedentes').value,
-    Alergias: document.getElementById('np-alergias').value,
-    Observaciones: document.getElementById('np-obs').value
-  };
-
-  fetch(API_URL, {method:'POST', body:JSON.stringify(Object.assign({action:'agregarPaciente'}, data))})
-    .then(function(r){ return r.json(); })
-    .then(function(json) {
-      if (json.success) {
-        showToast('✓ Paciente registrado');
-        closeOverlay('modal-addpac');
-        ['np-nombre','np-cedula','np-fechanac','np-edad','np-telefono','np-direccion','np-antecedentes','np-alergias','np-obs'].forEach(function(id) {
-          var el = document.getElementById(id);
-          if (el) el.value = '';
-        });
-        loadAll();
-      } else { showToast('✗ Error al guardar'); }
-      btn.disabled = false;
-      btn.textContent = 'Guardar Paciente';
-    })
-    .catch(function() {
-      showToast('✗ Error de conexión');
-      btn.disabled = false;
-      btn.textContent = 'Guardar Paciente';
-    });
-}
-
-function openPacienteDetail(id) {
-  var p = pacientes.find(function(x) { return x.ID === id; });
-  if (!p) return;
-  var atPac = atenciones.filter(function(a) { return a.PacienteID === id; }).sort(function(a,b) { return b.Fecha > a.Fecha ? 1 : -1; });
-  var appPac = appRecords.filter(function(a) { return a.PacienteID === id; }).sort(function(a,b) { return b.Fecha > a.Fecha ? 1 : -1; });
-  var ultimoTratamiento = atPac.find(function(a) { return a.Tratamiento && a.Tratamiento.trim() !== ''; });
-  document.getElementById('detail-title').textContent = p.NombreCompleto || 'Paciente';
-  document.getElementById('detail-body').innerHTML =
-    '<div style="padding:0 20px">' +
-    '<div class="detail-section"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
-    '<div><div class="detail-label">Cédula</div><div class="detail-value">' + (p.Cedula||'—') + '</div></div>' +
-    '<div><div class="detail-label">Teléfono</div><div class="detail-value">' + (p.Telefono||'—') + '</div>' +
-(p.Telefono ? '<div style="display:flex;gap:8px;margin-top:8px">' +
-'<a href="tel:' + p.Telefono + '" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:#e6f4f2;color:#1a7a6e;border-radius:10px;text-decoration:none;font-size:13px;font-weight:500">📞 Llamar</a>' +
-'<a href="https://wa.me/' + p.Telefono.replace(/[^0-9]/g,'') + '" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:#e7f8ee;color:#128C7E;border-radius:10px;text-decoration:none;font-size:13px;font-weight:500">💬 WhatsApp</a>' +
-'</div>' : '') +
-'</div>' +
-    '<div><div class="detail-label">Edad</div><div class="detail-value">' + (calcEdad(p.FechaNacimiento)||p.Edad||'—') + ' años</div></div>' +
-    '<div><div class="detail-label">Tipo Sangre</div><div class="detail-value">' + (p.TipoSangre||'—') + '</div></div>' +
-    '<div><div class="detail-label">Sexo</div><div class="detail-value">' + (p.Sexo||'—') + '</div></div>' +
-    '<div class="detail-section" style="background:#f0f9ff;border-radius:10px;padding:12px;margin-bottom:8px">' +
-    '<div class="detail-label" style="color:#0f2a4a;font-weight:700">⚡ VISTA RÁPIDA</div>' +
-    '<div style="margin-top:8px"><div class="detail-label">Último Tratamiento</div>' +
-    '<div class="detail-value" style="margin-top:4px;color:#1a7a6e;font-weight:500">' + (ultimoTratamiento ? ultimoTratamiento.Tratamiento : 'Sin tratamiento registrado') + '</div></div>' +
-    '<div style="margin-top:8px"><div class="detail-label">APP (Antecedentes Personales Patológicos)</div>' +
-    (appPac.length ? appPac.map(function(a) { return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e0f0ff"><div style="font-size:13px;color:#1a2635">' + a.Diagnostico + (a.Notas ? ' — <span style="color:#6b7f96">' + a.Notas + '</span>' : '') + '</div><div style="font-size:11px;color:#6b7f96;white-space:nowrap;margin-left:8px">' + formatDate(a.Fecha) + '</div></div>'; }).join('') : '<div style="font-size:13px;color:#6b7f96;margin-top:4px">Sin registros</div>') +
-    '<button onclick="abrirAgregarAPP(\'' + id + '\')" style="margin-top:10px;width:100%;padding:10px;background:#0f2a4a;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">+ Agregar APP</button>' +
-    '</div></div>' +
-    '<div class="detail-section"><div class="detail-label">Antecedentes Patológicos</div><div class="detail-value" style="margin-top:4px">' + (p.AntecedentesPatologicos||'Ninguno') + '</div></div>' +
-    '</div></div>' +
-    '<div class="detail-section"><div class="detail-label">Antecedentes</div><div class="detail-value" style="margin-top:4px">' + (p.AntecedentesPatologicos||'Ninguno') + '</div></div>' +
-    '<div class="detail-section"><div class="detail-label">Alergias</div><div class="detail-value" style="margin-top:4px">' + (p.Alergias||'Ninguna') + '</div></div>' +
-    (p.Observaciones ? '<div class="detail-section"><div class="detail-label">Observaciones</div><div class="detail-value" style="margin-top:4px">' + p.Observaciones + '</div></div>' : '') +
-    '<div class="detail-section"><div class="detail-label" style="margin-bottom:8px">Atenciones (' + atPac.length + ')</div>' +
-    (atPac.length === 0 ? '<div style="color:var(--muted);font-size:13px">Sin atenciones registradas</div>' :
-      atPac.map(function(a) {
-        return '<div style="padding:8px 0;border-bottom:1px solid var(--silver)">' +
-          '<div style="display:flex;justify-content:space-between">' +
-          '<div style="font-size:13px;font-weight:500;color:var(--navy)">' + formatDate(a.Fecha) + '</div>' +
-          '<span class="status ' + statusClass(a.Estado) + '">' + (a.Estado||'—') + '</span></div>' +
-          '<div style="font-size:12px;color:var(--muted);margin-top:3px">' + (a.TipoAtencion||'') + (a.MotivoConsulta ? ' · ' + a.MotivoConsulta : '') + '</div>' +
-          (a.Observaciones ? '<div style="font-size:12px;color:var(--muted);margin-top:2px">' + a.Observaciones + '</div>' : '') +
-          '</div>';
-      }).join('')) +
-    '</div></div>';
-  document.getElementById('modal-detail').classList.add('open');
-}
-
-// ═══════════════════════════════════════
-// REPORTES
-// ═══════════════════════════════════════
-function setReportTab(tab, el) {
-  currentReportTab = tab;
-  document.querySelectorAll('.report-tab').forEach(function(b) { b.classList.remove('active'); });
-  el.classList.add('active');
-  renderReportes();
-}
-
-function renderReportes() {
-  var body = document.getElementById('report-body');
-  if (currentReportTab === 'semanal')  body.innerHTML = buildSemanal();
-  if (currentReportTab === 'mensual')  body.innerHTML = buildMensual();
-  if (currentReportTab === 'paciente') body.innerHTML = buildPacienteReport();
-  if (currentReportTab === 'ingresos') body.innerHTML = buildIngresos();
-}
-
-function buildSemanal() {
-  var rng      = getWeekRange(reportWeekOffset);
-  var filtered = atenciones.filter(function(a) { var f = new Date(a.Fecha); return f >= rng.start && f <= rng.end; });
-  var total    = filtered.reduce(function(s,a) { return s + Number(a.Precio||0); }, 0);
-  var comp     = filtered.filter(function(a) { return a.Estado === 'Completada'; }).length;
-  var rows     = filtered.sort(function(a,b) { return a.Fecha > b.Fecha ? 1 : -1; }).map(function(a) {
-    var pac = pacientes.find(function(p) { return p.ID === a.PacienteID; }) || {};
-    return '<div class="report-row"><div><div class="report-row-name">' + (pac.NombreCompleto||'—') + '</div>' +
-      '<div style="font-size:11px;color:var(--muted)">' + formatDate(a.Fecha) + ' · ' + (a.TipoAtencion||'—') + '</div></div>' +
-      '<div style="text-align:right"><div class="report-row-val">$' + Number(a.Precio||0).toFixed(2) + '</div>' +
-      '<span class="status ' + statusClass(a.Estado) + '" style="margin-top:3px;display:inline-block">' + (a.Estado||'—') + '</span></div></div>';
-  }).join('') || '<div style="padding:16px;color:var(--muted);font-size:13px">Sin atenciones esta semana</div>';
-
-  return '<div class="report-nav">' +
-    '<button onclick="reportWeekOffset--;renderReportes()"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>' +
-    '<div class="report-nav-label">' + weekLabel(rng.start, rng.end) + '</div>' +
-    '<button onclick="if(reportWeekOffset<0){reportWeekOffset++;renderReportes()}"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button></div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 20px 14px">' +
-    '<div class="report-summary"><div class="report-summary-title">Total</div><div class="report-summary-val">$' + total.toFixed(2) + '</div><div class="report-summary-sub">' + filtered.length + ' atenciones</div></div>' +
-    '<div class="report-summary"><div class="report-summary-title">Completadas</div><div class="report-summary-val">' + comp + '</div><div class="report-summary-sub">de ' + filtered.length + '</div></div></div>' +
-    '<div class="report-card">' + rows + '</div>';
-}
-
-function buildMensual() {
-  var mo      = getMonthOffset(reportMonthOffset);
-  var meses   = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  var filtered = atenciones.filter(function(a) { var f = new Date(a.Fecha); return f.getFullYear()===mo.year && f.getMonth()===mo.month; });
-  var total    = filtered.reduce(function(s,a) { return s + Number(a.Precio||0); }, 0);
-  var byWeek   = {};
-  filtered.forEach(function(a) { var w = getWeekOfMonth(new Date(a.Fecha)); if (!byWeek[w]) byWeek[w] = []; byWeek[w].push(a); });
-  var weekRows = Object.keys(byWeek).sort().map(function(w) {
-    var sub = byWeek[w]; var wTotal = sub.reduce(function(s,a) { return s + Number(a.Precio||0); }, 0);
-    return '<div class="report-row"><div class="report-row-name">Semana ' + w + '</div>' +
-      '<div style="text-align:right"><div class="report-row-val">$' + wTotal.toFixed(2) + '</div>' +
-      '<div style="font-size:11px;color:var(--muted)">' + sub.length + ' atenciones</div></div></div>';
-  }).join('') || '<div style="padding:16px;color:var(--muted);font-size:13px">Sin atenciones este mes</div>';
-
-  return '<div class="report-nav">' +
-    '<button onclick="reportMonthOffset--;renderReportes()"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>' +
-    '<div class="report-nav-label">' + meses[mo.month] + ' ' + mo.year + '</div>' +
-    '<button onclick="if(reportMonthOffset<0){reportMonthOffset++;renderReportes()}"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button></div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 20px 14px">' +
-    '<div class="report-summary"><div class="report-summary-title">Total mes</div><div class="report-summary-val">$' + total.toFixed(2) + '</div><div class="report-summary-sub">' + filtered.length + ' atenciones</div></div>' +
-    '<div class="report-summary"><div class="report-summary-title">Promedio/aten.</div><div class="report-summary-val">$' + (filtered.length ? (total/filtered.length).toFixed(2) : '0.00') + '</div><div class="report-summary-sub">por atención</div></div></div>' +
-    '<div class="report-card">' + weekRows + '</div>';
-}
-
-function buildPacienteReport() {
-  var opts = pacientes.sort(function(a,b) { return (a.NombreCompleto||'').localeCompare(b.NombreCompleto||''); })
-    .map(function(p) { return '<option value="' + p.ID + '"' + (p.ID===reportPacienteID?' selected':'') + '>' + p.NombreCompleto + '</option>'; }).join('');
-  var detail = '';
-  if (reportPacienteID) {
-    var pac    = pacientes.find(function(p) { return p.ID === reportPacienteID; }) || {};
-    var atPac  = atenciones.filter(function(a) { return a.PacienteID === reportPacienteID; }).sort(function(a,b) { return b.Fecha > a.Fecha ? 1 : -1; });
-    var totPac = atPac.reduce(function(s,a) { return s + Number(a.Precio||0); }, 0);
-    var rows   = atPac.map(function(a) {
-      return '<div class="report-row"><div>' +
-        '<div class="report-row-name">' + formatDate(a.Fecha) + ' ' + formatHora(a.Hora) + '</div>' +
-        '<div style="font-size:11px;color:var(--muted)">' + (a.TipoAtencion||'—') + (a.MotivoConsulta ? ' · ' + a.MotivoConsulta : '') + '</div>' +
-        (a.Observaciones ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + a.Observaciones + '</div>' : '') +
-        '</div><div style="text-align:right"><div class="report-row-val">$' + Number(a.Precio||0).toFixed(2) + '</div>' +
-        '<span class="status ' + statusClass(a.Estado) + '" style="margin-top:3px;display:inline-block">' + (a.Estado||'—') + '</span></div></div>';
-    }).join('') || '<div style="padding:16px;color:var(--muted);font-size:13px">Sin atenciones</div>';
-    detail = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 20px 14px">' +
-      '<div class="report-summary"><div class="report-summary-title">Total pagado</div><div class="report-summary-val">$' + totPac.toFixed(2) + '</div><div class="report-summary-sub">' + atPac.length + ' atenciones</div></div>' +
-      '<div class="report-summary"><div class="report-summary-title">Última visita</div><div class="report-summary-val" style="font-size:16px">' + (atPac.length ? formatDate(atPac[0].Fecha) : '—') + '</div></div></div>' +
-      '<div class="report-card">' + rows + '</div>';
-  }
-  return '<div style="margin:16px 20px 14px">' +
-    '<select style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:8px;font-family:\'Segoe UI\',Arial,sans-serif;font-size:14px;color:var(--text);outline:none" onchange="reportPacienteID=this.value;renderReportes()">' +
-    '<option value="">— Seleccionar paciente —</option>' + opts + '</select></div>' + detail;
-}
-
-function buildIngresos() {
-  var mo    = getMonthOffset(reportIngresosOffset);
-  var meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  var all   = atenciones.filter(function(a) {
-    if (reportIngresosMode === 'mensual') { var f = new Date(a.Fecha); return f.getFullYear()===mo.year && f.getMonth()===mo.month; }
-    return true;
-  }).filter(function(a) { return a.Estado === 'Completada'; });
-  var total  = all.reduce(function(s,a) { return s + Number(a.Precio||0); }, 0);
-  var byPac  = {};
-  all.forEach(function(a) { if (!byPac[a.PacienteID]) byPac[a.PacienteID] = 0; byPac[a.PacienteID] += Number(a.Precio||0); });
-  var pacRows = Object.entries(byPac).sort(function(a,b) { return b[1]-a[1]; }).map(function(entry) {
-    var pac = pacientes.find(function(p) { return p.ID === entry[0]; }) || {};
-    return '<div class="report-row"><div class="report-row-name">' + (pac.NombreCompleto||'Paciente') + '</div><div class="report-row-val">$' + entry[1].toFixed(2) + '</div></div>';
-  }).join('') || '<div style="padding:16px;color:var(--muted);font-size:13px">Sin ingresos registrados</div>';
-
-  var navHtml = reportIngresosMode === 'mensual' ?
-    '<div class="report-nav">' +
-    '<button onclick="reportIngresosOffset--;renderReportes()"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>' +
-    '<div class="report-nav-label">' + meses[mo.month] + ' ' + mo.year + '</div>' +
-    '<button onclick="if(reportIngresosOffset<0){reportIngresosOffset++;renderReportes()}"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button></div>' : '';
-
-  return '<div style="display:flex;gap:8px;margin:16px 20px 4px">' +
-    '<button class="report-tab ' + (reportIngresosMode==='mensual'?'active':'') + '" onclick="reportIngresosMode=\'mensual\';renderReportes()">Por mes</button>' +
-    '<button class="report-tab ' + (reportIngresosMode==='total'?'active':'') + '" onclick="reportIngresosMode=\'total\';renderReportes()">Total</button></div>' +
-    navHtml +
-    '<div style="margin:10px 20px 14px"><div class="report-summary">' +
-    '<div class="report-summary-title">Ingresos ' + (reportIngresosMode==='mensual'?'del mes':'totales') + ' (completadas)</div>' +
-    '<div class="report-summary-val">$' + total.toFixed(2) + '</div>' +
-    '<div class="report-summary-sub">' + all.length + ' atenciones completadas</div></div></div>' +
-    '<div style="margin:0 20px 6px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">Por paciente</div>' +
-    '<div class="report-card">' + pacRows + '</div>';
-}
-
-// ═══════════════════════════════════════
-// EXPORTAR PDF
-// ═══════════════════════════════════════
-function exportarPDF() {
-  var btn = document.getElementById('btnPDF');
-  btn.disabled = true;
-  btn.textContent = 'Generando...';
-
-  try {
-    var doc    = new window.jspdf.jsPDF();
-    var titulo = 'Reporte MedControl';
-    var fecha  = new Date().toLocaleDateString('es-PA');
-    var lineas = [];
-    var meses  = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-
-    if (currentReportTab === 'semanal') {
-      var rng      = getWeekRange(reportWeekOffset);
-      titulo       = 'Reporte Semanal - ' + weekLabel(rng.start, rng.end);
-      var filtered = atenciones.filter(function(a) { var f = new Date(a.Fecha); return f >= rng.start && f <= rng.end; });
-      var total    = filtered.reduce(function(s,a) { return s + Number(a.Precio||0); }, 0);
-      lineas.push('Total: $' + total.toFixed(2) + ' | Atenciones: ' + filtered.length);
-      lineas.push('');
-      filtered.sort(function(a,b) { return a.Fecha > b.Fecha ? 1 : -1; }).forEach(function(a) {
-        var pac = pacientes.find(function(p) { return p.ID === a.PacienteID; }) || {};
-        lineas.push(formatDate(a.Fecha) + ' ' + formatHora(a.Hora) + ' - ' + (pac.NombreCompleto||'—'));
-        lineas.push('Tipo: ' + (a.TipoAtencion||'—') + '  Estado: ' + (a.Estado||'—') + '  Precio: $' + Number(a.Precio||0).toFixed(2));
-        if (a.MotivoConsulta) lineas.push('Motivo: ' + a.MotivoConsulta);
-        if (a.Observaciones)  lineas.push('Obs: ' + a.Observaciones);
-        lineas.push('---');
-      });
-    }
-
-    else if (currentReportTab === 'mensual') {
-      var mo       = getMonthOffset(reportMonthOffset);
-      titulo       = 'Reporte Mensual - ' + meses[mo.month] + ' ' + mo.year;
-      var filtered = atenciones.filter(function(a) { var f = new Date(a.Fecha); return f.getFullYear()===mo.year && f.getMonth()===mo.month; });
-      var total    = filtered.reduce(function(s,a) { return s + Number(a.Precio||0); }, 0);
-      lineas.push('Total: $' + total.toFixed(2) + ' | Atenciones: ' + filtered.length);
-      lineas.push('Promedio por atención: $' + (filtered.length ? (total/filtered.length).toFixed(2) : '0.00'));
-      lineas.push('');
-      filtered.sort(function(a,b) { return a.Fecha > b.Fecha ? 1 : -1; }).forEach(function(a) {
-        var pac = pacientes.find(function(p) { return p.ID === a.PacienteID; }) || {};
-        lineas.push(formatDate(a.Fecha) + ' - ' + (pac.NombreCompleto||'—') + ' - $' + Number(a.Precio||0).toFixed(2) + ' - ' + (a.Estado||'—'));
-      });
-    }
-
-    else if (currentReportTab === 'paciente') {
-      if (!reportPacienteID) { showToast('⚠ Selecciona un paciente'); btn.disabled=false; btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Exportar PDF'; return; }
-      var pac   = pacientes.find(function(p) { return p.ID === reportPacienteID; }) || {};
-      var atPac = atenciones.filter(function(a) { return a.PacienteID === reportPacienteID; }).sort(function(a,b) { return b.Fecha > a.Fecha ? 1 : -1; });
-      titulo    = 'Historial - ' + (pac.NombreCompleto||'Paciente');
-      lineas.push('Cédula: ' + (pac.Cedula||'—') + '  Teléfono: ' + (pac.Telefono||'—'));
-      lineas.push('Edad: ' + (calcEdad(pac.FechaNacimiento)||pac.Edad||'—') + '  Sangre: ' + (pac.TipoSangre||'—'));
-      lineas.push('Antecedentes: ' + (pac.AntecedentesPatologicos||'Ninguno'));
-      lineas.push('Alergias: ' + (pac.Alergias||'Ninguna'));
-      lineas.push('');
-      lineas.push('ATENCIONES (' + atPac.length + ')');
-      lineas.push('');
-      atPac.forEach(function(a) {
-        lineas.push(formatDate(a.Fecha) + ' ' + formatHora(a.Hora));
-        lineas.push('Tipo: ' + (a.TipoAtencion||'—') + '  Estado: ' + (a.Estado||'—') + '  Precio: $' + Number(a.Precio||0).toFixed(2));
-        if (a.MotivoConsulta) lineas.push('Motivo: ' + a.MotivoConsulta);
-        if (a.Observaciones)  lineas.push('Obs: ' + a.Observaciones);
-        lineas.push('---');
-      });
-    }
-
-    else if (currentReportTab === 'ingresos') {
-      var mo      = getMonthOffset(reportIngresosOffset);
-      titulo      = reportIngresosMode === 'mensual' ? 'Ingresos - ' + meses[mo.month] + ' ' + mo.year : 'Ingresos Totales';
-      var all     = atenciones.filter(function(a) {
-        if (reportIngresosMode === 'mensual') { var f = new Date(a.Fecha); return f.getFullYear()===mo.year && f.getMonth()===mo.month; }
-        return true;
-      }).filter(function(a) { return a.Estado === 'Completada'; });
-      var total   = all.reduce(function(s,a) { return s + Number(a.Precio||0); }, 0);
-      lineas.push('Total ingresos: $' + total.toFixed(2));
-      lineas.push('Atenciones completadas: ' + all.length);
-      lineas.push('');
-      all.sort(function(a,b) { return a.Fecha > b.Fecha ? 1 : -1; }).forEach(function(a) {
-        var pac = pacientes.find(function(p) { return p.ID === a.PacienteID; }) || {};
-        lineas.push(formatDate(a.Fecha) + ' - ' + (pac.NombreCompleto||'—') + ' - $' + Number(a.Precio||0).toFixed(2));
-      });
-    }
-
-    // GENERAR PDF
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.text(titulo, 14, 18);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text('Generado: ' + fecha, 14, 25);
-    doc.setLineWidth(0.3);
-    doc.line(14, 28, 196, 28);
-
-    var y = 35;
-    doc.setFontSize(10);
-    lineas.forEach(function(linea) {
-      var split = doc.splitTextToSize(linea, 180);
-      split.forEach(function(txt) {
-        if (y > 280) { doc.addPage(); y = 20; }
-        doc.text(txt, 14, y);
-        y += 6;
-      });
-    });
-
-    doc.save(titulo.replace(/ /g,'_') + '.pdf');
-    showToast('✓ PDF exportado');
-  } catch(err) {
-    console.error(err);
-    showToast('✗ Error al exportar PDF');
-  }
-
-  btn.disabled = false;
-  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Exportar PDF';
-}
-
-// ═══════════════════════════════════════
-// OVERLAYS
-// ═══════════════════════════════════════
-function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.overlay').forEach(function(o) {
-  o.addEventListener('click', function(e) { if (e.target === o) o.classList.remove('open'); });
-});
-
-// ═══════════════════════════════════════
-// UTILIDADES
-// ═══════════════════════════════════════
-function calcEdad(fechaNac) {
-  if (!fechaNac) return '';
-  var nac = new Date(fechaNac);
-  if (isNaN(nac)) return '';
-  var hoy = new Date();
-  var edad = hoy.getFullYear() - nac.getFullYear();
-  var m = hoy.getMonth() - nac.getMonth();
-  if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
-  return edad >= 0 ? String(edad) : '';
-}
-
-function calcEdadNuevo() {
-  var val = document.getElementById('np-fechanac').value;
-  document.getElementById('np-edad').value = calcEdad(val) ? calcEdad(val) + ' años' : '';
-}
-
-function formatDate(val) {
-  if (!val) return '—';
-  var d = new Date(val);
-  if (isNaN(d)) return String(val).split('T')[0];
-  return d.toLocaleDateString('es-PA', {day:'2-digit', month:'2-digit', year:'numeric'});
-}
-
-function formatHora(val) {
-  if (!val) return '';
-  return String(val).substring(0, 5);
-}
-
-function statusClass(s) {
-  var m = {Completada:'status-completada', Cancelada:'status-cancelada', Pendiente:'status-pendiente', Pospuesta:'status-pospuesta'};
-  return m[s] || '';
-}
-
-function getWeekRange(offset) {
-  var now = new Date(); var day = now.getDay();
-  var mon = new Date(now);
-  mon.setDate(now.getDate() - (day===0?6:day-1) + offset*7);
-  mon.setHours(0,0,0,0);
-  var sun = new Date(mon); sun.setDate(mon.getDate()+6); sun.setHours(23,59,59,999);
-  return {start:mon, end:sun};
-}
-
-function weekLabel(start, end) {
-  return start.getDate() + '/' + (start.getMonth()+1) + ' – ' + end.getDate() + '/' + (end.getMonth()+1) + '/' + end.getFullYear();
-}
-
-function getMonthOffset(offset) {
-  var now = new Date(); var year = now.getFullYear(); var month = now.getMonth() + offset;
-  while (month < 0)  { month += 12; year--; }
-  while (month > 11) { month -= 12; year++; }
-  return {year:year, month:month};
-}
-
-function getWeekOfMonth(d) { return Math.ceil(d.getDate()/7); }
-
-function showToast(msg) {
-  var t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(function() { t.classList.remove('show'); }, 2800);
-}
-
-  function abrirAgregarAPP(pacienteId) {
-  var overlay = document.createElement('div');
-  overlay.id = 'overlay-app';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,42,74,0.5);z-index:400;display:flex;align-items:flex-end;justify-content:center';
-  overlay.innerHTML = 
-    '<div style="background:white;width:100%;max-width:430px;border-radius:20px 20px 0 0;padding:20px 0 40px">' +
-    '<div style="width:36px;height:4px;background:#d8e2ec;border-radius:2px;margin:0 auto 18px"></div>' +
-    '<div style="font-family:Georgia,serif;font-size:20px;color:#0f2a4a;margin:0 20px 18px">Nuevo APP</div>' +
-    '<div style="margin:0 20px 14px"><label style="display:block;font-size:11px;font-weight:600;color:#4a6080;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:5px">Fecha</label>' +
-    '<input type="date" id="app-fecha" style="width:100%;padding:11px 14px;border:1px solid #d8e2ec;border-radius:8px;font-size:14px" /></div>' +
-    '<div style="margin:0 20px 14px"><label style="display:block;font-size:11px;font-weight:600;color:#4a6080;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:5px">Diagnóstico</label>' +
-    '<input type="text" id="app-diagnostico" placeholder="Ej. Hipertensión arterial" style="width:100%;padding:11px 14px;border:1px solid #d8e2ec;border-radius:8px;font-size:14px" /></div>' +
-    '<div style="margin:0 20px 14px"><label style="display:block;font-size:11px;font-weight:600;color:#4a6080;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:5px">Notas</label>' +
-    '<textarea id="app-notas" placeholder="Detalles adicionales..." style="width:100%;padding:11px 14px;border:1px solid #d8e2ec;border-radius:8px;font-size:14px;resize:vertical;min-height:80px"></textarea></div>' +
-    '<button onclick="guardarAPP(\'' + pacienteId + '\')" style="width:calc(100% - 40px);margin:0 20px;background:#0f2a4a;color:white;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:600;cursor:pointer">Guardar APP</button>' +
-    '<button onclick="document.getElementById(\'overlay-app\').remove()" style="width:100%;padding:12px;background:none;border:none;color:#6b7f96;font-size:14px;cursor:pointer;margin-top:6px">Cancelar</button>' +
-    '</div>';
-  document.body.appendChild(overlay);
-  document.getElementById('app-fecha').value = new Date().toISOString().split('T')[0];
-}
-
-function guardarAPP(pacienteId) {
-  var fecha      = document.getElementById('app-fecha').value;
-  var diagnostico = document.getElementById('app-diagnostico').value.trim();
-  var notas      = document.getElementById('app-notas').value;
-  if (!diagnostico) { alert('El diagnóstico es requerido'); return; }
-  var btn = document.querySelector('#overlay-app button');
-  btn.disabled = true; btn.textContent = 'Guardando...';
-  fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'agregarAPP', PacienteID: pacienteId, Fecha: fecha, Diagnostico: diagnostico, Notas: notas })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(json) {
-    if (json.success) {
-      appRecords.push({ ID: json.id, PacienteID: pacienteId, Fecha: fecha, Diagnostico: diagnostico, Notas: notas });
-      document.getElementById('overlay-app').remove();
-      openPacienteDetail(pacienteId);
-    } else { alert('Error al guardar'); btn.disabled = false; btn.textContent = 'Guardar APP'; }
-  })
-  .catch(function() { alert('Error de conexión'); btn.disabled = false; btn.textContent = 'Guardar APP'; });
-}
-
-// PWA Service Worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js').catch(function(e){ console.log('SW error:', e); });
-  });
-}
-</script>
+<script src="app.js"></script>
 </body>
 </html>
